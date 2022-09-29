@@ -6,6 +6,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     ConversationHandler,
     CallbackContext,
+    MessageHandler,
+    Filters,
 )
 from config import BOT_TOKEN
 from view import (
@@ -16,6 +18,8 @@ from view import (
     show_month_oct,
     show_month_dec,
     show_archive,
+    show_management,
+    go_back
 )
 
 
@@ -29,8 +33,9 @@ FIRST, SECOND = range(2)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
 Y2022, Y2023, Y2024 = range(2022, 2025)
-ARCHIVE, START_OVER = 'ARCHIVE', 'START_OVER'
+ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE = 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE'
 JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC = range(1, 13)
+GENDER, PHOTO, LOCATION, BIO = range(4)
 
 
 def end(update: Update, context: CallbackContext) -> int:
@@ -67,17 +72,37 @@ def main() -> None:
                 CallbackQueryHandler(show_month_dec, pattern='^' + str(DEC) + '$'),
                 CallbackQueryHandler(show_archive, pattern='^' + str(ARCHIVE) + '$'),
                 CallbackQueryHandler(start_over, pattern='^' + str(START_OVER) + '$'),
+                CallbackQueryHandler(show_management, pattern='^' + str(MANAGEMENT) + '$'),
+                CallbackQueryHandler(go_back, pattern='^' + str(CREATE) + '$'),
+                CallbackQueryHandler(go_back, pattern='^' + str(EDIT) + '$'),
             ],
             SECOND: [
                 CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
                 CallbackQueryHandler(end, pattern='^' + str(TWO) + '$'),
             ],
+            # GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
+            # PHOTO: [MessageHandler(Filters.photo, photo), CommandHandler('skip', skip_photo)],
         },
         fallbacks=[CommandHandler('start', start)],
     )
 
+    # conv_handler_2 = ConversationHandler(
+    #     entry_points=[CallbackQueryHandler(show_management, pattern='^' + str(MANAGEMENT) + '$')],
+    #     states={
+    #         GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
+    #         PHOTO: [MessageHandler(Filters.photo, photo), CommandHandler('skip', skip_photo)],
+    #         # LOCATION: [
+    #         #     MessageHandler(Filters.location, location),
+    #         #     CommandHandler('skip', skip_location),
+    #         # ],
+    #         # BIO: [MessageHandler(Filters.text & ~Filters.command, bio)],
+    #     },
+    #     fallbacks=[CommandHandler('cancel', cancel)],
+    # )
+
     # Add ConversationHandler to dispatcher that will be used for handling updates
     dispatcher.add_handler(conv_handler)
+    # dispatcher.add_handler(conv_handler_2)
 
     # Start the Bot
     updater.start_polling()

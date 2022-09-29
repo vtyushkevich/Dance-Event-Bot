@@ -1,11 +1,8 @@
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
-    Updater,
-    CommandHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
     CallbackContext,
+    ConversationHandler
 )
 
 
@@ -19,7 +16,7 @@ FIRST, SECOND = range(2)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
 Y2021, Y2022, Y2023, Y2024 = range(2021, 2025)
-ARCHIVE, START_OVER = 'ARCHIVE', 'START_OVER'
+ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE = 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE'
 JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC = range(1, 13)
 FLAG_RU, FLAG_TR, FLAG_HR = "\U0001F1F7\U0001F1FA", "\U0001F1F9\U0001F1F7", "\U0001F1ED\U0001F1F7"
 
@@ -38,12 +35,12 @@ def start(update: Update, context: CallbackContext) -> int:
             InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
         ],
         [
-            InlineKeyboardButton("Управление событиями", callback_data=str(TWO))
+            InlineKeyboardButton("Редактирование событий", callback_data=str(MANAGEMENT))
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     # Send message with text and appended InlineKeyboard
-    update.message.reply_text("Танцы спасут этот мир :) Я бот и покажу тебе, что происходит в мире танцев",
+    update.message.reply_text("Танцы спасут этот мир\U0001F483\nЯ бот и покажу тебе, что происходит в мире танцев\U0001F525",
                               reply_markup=reply_markup)
     # Tell ConversationHandler that we're in state `FIRST` now
     return FIRST
@@ -61,7 +58,7 @@ def start_over(update: Update, context: CallbackContext) -> int:
             InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
         ],
         [
-            InlineKeyboardButton("Управление событиями", callback_data=str(TWO))
+            InlineKeyboardButton("Редактирование событий", callback_data=str(MANAGEMENT))
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -186,53 +183,88 @@ def show_archive(update: Update, context: CallbackContext) -> int:
     )
     return FIRST
 
-# def two(update: Update, context: CallbackContext) -> int:
-#     """Show new choice of buttons"""
-#     query = update.callback_query
-#     query.answer()
-#     keyboard = [
-#         [
-#             InlineKeyboardButton("1", callback_data=str(ONE)),
-#             InlineKeyboardButton("3", callback_data=str(THREE)),
-#         ]
-#     ]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     query.edit_message_text(
-#         text="Second CallbackQueryHandler, Choose a route", reply_markup=reply_markup
+
+def show_management(update: Update, context: CallbackContext) -> int:
+    """Show new choice of buttons"""
+    query = update.callback_query
+    query.answer()
+    keyboard = [
+        [
+            InlineKeyboardButton("Создать событие", callback_data=str(CREATE))
+        ],
+        [
+            InlineKeyboardButton("Редактировать событие", callback_data=str(EDIT))
+        ],
+        [
+            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.edit_message_text(
+        text="Управление событиями", reply_markup=reply_markup
+    )
+    return FIRST
+
+
+def go_back(update: Update, context: CallbackContext) -> int:
+    """Show new choice of buttons"""
+    query = update.callback_query
+    query.answer()
+    keyboard = [
+        [
+            InlineKeyboardButton("Назад", callback_data=str(MANAGEMENT))
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.edit_message_text(
+        text="Управление событиями", reply_markup=reply_markup
+    )
+    return FIRST
+#
+#
+# def gender(update: Update, context: CallbackContext) -> int:
+#     """Stores the selected gender and asks for a photo."""
+#     user = update.message.from_user
+#     logger.info("Gender of %s: %s", user.first_name, update.message.text)
+#     update.message.reply_text(
+#         'I see! Please send me a photo of yourself, '
+#         'so I know what you look like, or send /skip if you don\'t want to.',
+#         reply_markup=ReplyKeyboardRemove(),
 #     )
-#     return FIRST
+#
+#     return PHOTO
 #
 #
-# def three(update: Update, context: CallbackContext) -> int:
-#     """Show new choice of buttons"""
-#     query = update.callback_query
-#     query.answer()
-#     keyboard = [
-#         [
-#             InlineKeyboardButton("Yes, let's do it again!", callback_data=str(ONE)),
-#             InlineKeyboardButton("Nah, I've had enough ...", callback_data=str(TWO)),
-#         ]
-#     ]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     query.edit_message_text(
-#         text="Third CallbackQueryHandler. Do want to start over?", reply_markup=reply_markup
+# def photo(update: Update, context: CallbackContext) -> int:
+#     """Stores the photo and asks for a location."""
+#     user = update.message.from_user
+#     photo_file = update.message.photo[-1].get_file()
+#     photo_file.download('user_photo.jpg')
+#     logger.info("Photo of %s: %s", user.first_name, 'user_photo.jpg')
+#     update.message.reply_text(
+#         'Gorgeous! Now, send me your location please, or send /skip if you don\'t want to.'
 #     )
-#     # Transfer to conversation state `SECOND`
-#     return SECOND
+#
+#     return LOCATION
 #
 #
-# def four(update: Update, context: CallbackContext) -> int:
-#     """Show new choice of buttons"""
-#     query = update.callback_query
-#     query.answer()
-#     keyboard = [
-#         [
-#             InlineKeyboardButton("2", callback_data=str(TWO)),
-#             InlineKeyboardButton("3", callback_data=str(THREE)),
-#         ]
-#     ]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     query.edit_message_text(
-#         text="Fourth CallbackQueryHandler, Choose a route", reply_markup=reply_markup
+# def skip_photo(update: Update, context: CallbackContext) -> int:
+#     """Skips the photo and asks for a location."""
+#     user = update.message.from_user
+#     logger.info("User %s did not send a photo.", user.first_name)
+#     update.message.reply_text(
+#         'I bet you look great! Now, send me your location please, or send /skip.'
 #     )
-#     return FIRST
+#
+#     return LOCATION
+#
+#
+# def cancel(update: Update, context: CallbackContext) -> int:
+#     """Cancels and ends the conversation."""
+#     user = update.message.from_user
+#     logger.info("User %s canceled the conversation.", user.first_name)
+#     update.message.reply_text(
+#         'Bye! I hope we can talk again some day.', reply_markup=ReplyKeyboardRemove()
+#     )
+#
+#     return ConversationHandler.END
