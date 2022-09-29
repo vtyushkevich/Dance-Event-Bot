@@ -7,6 +7,7 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+from config import BOT_TOKEN
 
 
 logging.basicConfig(
@@ -173,7 +174,8 @@ def end(update: Update, context: CallbackContext) -> int:
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    updater = Updater("5318589168:AAHji914LUBoYbIrwnfv3RFsL-me7KJcOFU")
+    # updater = Updater("5318589168:AAHji914LUBoYbIrwnfv3RFsL-me7KJcOFU")
+    updater = Updater(BOT_TOKEN)
 
     dispatcher = updater.dispatcher
 
