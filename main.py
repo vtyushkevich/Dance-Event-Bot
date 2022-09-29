@@ -8,6 +8,15 @@ from telegram.ext import (
     CallbackContext,
 )
 from config import BOT_TOKEN
+from view import (
+    start,
+    start_over,
+    show_calendar,
+    show_month_list,
+    show_month_oct,
+    show_month_dec,
+    show_archive,
+)
 
 
 logging.basicConfig(
@@ -19,146 +28,9 @@ logger = logging.getLogger(__name__)
 FIRST, SECOND = range(2)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
-
-
-def start(update: Update, context: CallbackContext) -> int:
-    """Send message on `/start`."""
-    # Get user that sent /start and log his name
-    user = update.message.from_user
-    logger.info("User %s started the conversation.", user.first_name)
-    # Build InlineKeyboard where each button has a displayed text
-    # and a string as callback_data
-    # The keyboard is a list of button rows, where each row is in turn
-    # a list (hence `[[...]]`).
-    keyboard = [
-        [
-            InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
-        ],
-        [
-            InlineKeyboardButton("Посмотреть архив", callback_data=str(TWO))
-        ],
-        [
-            InlineKeyboardButton("Создать новое событие", callback_data=str(THREE))
-        ],
-        [
-            InlineKeyboardButton("Редактировать события", callback_data=str(FOUR))
-        ]
-
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    # Send message with text and appended InlineKeyboard
-    update.message.reply_text("Start handler, Choose a route", reply_markup=reply_markup)
-    # Tell ConversationHandler that we're in state `FIRST` now
-    return FIRST
-
-
-def start_over(update: Update, context: CallbackContext) -> int:
-    """Prompt same text & keyboard as `start` does but not as new message"""
-    # Get CallbackQuery from Update
-    query = update.callback_query
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
-        ],
-        [
-            InlineKeyboardButton("Посмотреть архив", callback_data=str(TWO))
-        ],
-        [
-            InlineKeyboardButton("Создать новое событие", callback_data=str(THREE))
-        ],
-        [
-            InlineKeyboardButton("Редактировать события", callback_data=str(FOUR))
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    # Instead of sending a new message, edit the message that
-    # originated the CallbackQuery. This gives the feeling of an
-    # interactive menu.
-    query.edit_message_text(text="Start handler, Choose a route", reply_markup=reply_markup)
-    return FIRST
-
-
-def one(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Январь", callback_data='Jan')
-        ],
-        [
-            InlineKeyboardButton("Февраль", callback_data='Feb')
-        ],
-        [
-            InlineKeyboardButton("Март", callback_data='Mar')
-        ],
-        [
-            InlineKeyboardButton("Апрель", callback_data='Apr')
-        ],
-        [
-            InlineKeyboardButton("Посмотреть все события", callback_data='All')
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="First CallbackQueryHandler, Choose a route", reply_markup=reply_markup
-    )
-    return FIRST
-
-
-def two(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("1", callback_data=str(ONE)),
-            InlineKeyboardButton("3", callback_data=str(THREE)),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Second CallbackQueryHandler, Choose a route", reply_markup=reply_markup
-    )
-    return FIRST
-
-
-def three(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Yes, let's do it again!", callback_data=str(ONE)),
-            InlineKeyboardButton("Nah, I've had enough ...", callback_data=str(TWO)),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Third CallbackQueryHandler. Do want to start over?", reply_markup=reply_markup
-    )
-    # Transfer to conversation state `SECOND`
-    return SECOND
-
-
-def four(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("2", callback_data=str(TWO)),
-            InlineKeyboardButton("3", callback_data=str(THREE)),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Fourth CallbackQueryHandler, Choose a route", reply_markup=reply_markup
-    )
-    return FIRST
+Y2022, Y2023, Y2024 = range(2022, 2025)
+ARCHIVE, START_OVER = 'ARCHIVE', 'START_OVER'
+JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC = range(1, 13)
 
 
 def end(update: Update, context: CallbackContext) -> int:
@@ -167,7 +39,7 @@ def end(update: Update, context: CallbackContext) -> int:
     """
     query = update.callback_query
     query.answer()
-    query.edit_message_text(text="See you next time!")
+    query.edit_message_text(text="До встречи!")
     return ConversationHandler.END
 
 
@@ -189,10 +61,12 @@ def main() -> None:
         entry_points=[CommandHandler('start', start)],
         states={
             FIRST: [
-                CallbackQueryHandler(one, pattern='^' + str(ONE) + '$'),
-                CallbackQueryHandler(two, pattern='^' + str(TWO) + '$'),
-                CallbackQueryHandler(three, pattern='^' + str(THREE) + '$'),
-                CallbackQueryHandler(four, pattern='^' + str(FOUR) + '$'),
+                CallbackQueryHandler(show_calendar, pattern='^' + str(ONE) + '$'),
+                CallbackQueryHandler(show_month_list, pattern='^' + str(Y2022) + '$'),
+                CallbackQueryHandler(show_month_oct, pattern='^' + str(OCT) + '$'),
+                CallbackQueryHandler(show_month_dec, pattern='^' + str(DEC) + '$'),
+                CallbackQueryHandler(show_archive, pattern='^' + str(ARCHIVE) + '$'),
+                CallbackQueryHandler(start_over, pattern='^' + str(START_OVER) + '$'),
             ],
             SECOND: [
                 CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
