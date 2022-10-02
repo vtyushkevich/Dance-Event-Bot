@@ -56,10 +56,7 @@ def start(update: Update, context: CallbackContext) -> int:
 
 def start_over(update: Update, context: CallbackContext) -> int:
     """Prompt same text & keyboard as `start` does but not as new message"""
-    # Get CallbackQuery from Update
     query = update.callback_query
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     query.answer()
     keyboard = [
         [
@@ -73,9 +70,6 @@ def start_over(update: Update, context: CallbackContext) -> int:
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    # Instead of sending a new message, edit the message that
-    # originated the CallbackQuery. This gives the feeling of an
-    # interactive menu.
     query.edit_message_text(text="Что делаем дальше?", reply_markup=reply_markup)
     context.user_data['EDIT_NAME'] = ""
     context.user_data['EDIT_CITY'] = ""
@@ -98,7 +92,6 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
     query = update.callback_query
     query.answer()
     # bot = Bot(BOT_TOKEN)
@@ -141,19 +134,10 @@ def creating_event(update: Update, context: CallbackContext) -> int:
         text="Заполните данные о событии",
         reply_markup=reply_markup
     )
-    # context.user_data['EDIT_NAME'] = ""
-    # context.user_data['EDIT_CITY'] = ""
-    # context.user_data['EDIT_COUNTRY'] = ""
-    # context.user_data['EDIT_DESC'] = ""
-    # context.user_data['EDIT_DATE_START'] = ""
-    # context.user_data['EDIT_DATE_END'] = ""
-    # context.user_data['EDIT_PHOTO'] = ""
-
     return CREATE_EVENT
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
-    """Ask the user for info about the selected predefined choice."""
     text = update.callback_query.data
     context.user_data['property_to_edit'] = text
     logger.info("property_to_edit - %s", text)
@@ -173,7 +157,6 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
 
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
-    """Store info provided by user and ask for the next category."""
     user_data = context.user_data
     text = update.message.text
     category = user_data['property_to_edit']
@@ -222,7 +205,6 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
 
 
 def get_date_to_edit(update: Update, context: CallbackContext) -> int:
-    """Ask the user for info about the selected predefined choice."""
     text = update.callback_query.data
     context.user_data['property_to_edit'] = text
     logger.info("property_to_edit - %s", text)
