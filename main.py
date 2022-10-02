@@ -1,5 +1,5 @@
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update, Message
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -19,8 +19,16 @@ from view import (
     show_month_dec,
     show_archive,
     show_management,
-    go_back
+    go_back,
+    cancel,
+    creating_event,
+    get_property_to_edit,
+    set_property_value,
+    get_date_to_edit,
+    cal
 )
+
+from view import EDIT_NAME, EDIT_CITY, EDIT_DESC, EDIT_DATE_START
 
 
 logging.basicConfig(
@@ -29,87 +37,60 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Stages
-FIRST, SECOND = range(2)
+TOP_LEVEL, CREATE_EVENT, CREATE_DATE = range(3)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
 Y2022, Y2023, Y2024 = range(2022, 2025)
-ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE = 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE'
+ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE, BACK = 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE', 'BACK'
 JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC = range(1, 13)
 GENDER, PHOTO, LOCATION, BIO = range(4)
 
 
-def end(update: Update, context: CallbackContext) -> int:
-    """Returns `ConversationHandler.END`, which tells the
-    ConversationHandler that the conversation is over.
-    """
-    query = update.callback_query
-    query.answer()
-    query.edit_message_text(text="До встречи!")
-    return ConversationHandler.END
-
-
 def main() -> None:
     """Run the bot."""
-    # Create the Updater and pass it your bot's token.
-    # updater = Updater("5318589168:AAHji914LUBoYbIrwnfv3RFsL-me7KJcOFU")
     updater = Updater(BOT_TOKEN)
-
     dispatcher = updater.dispatcher
 
-    # Setup conversation handler with the states FIRST and SECOND
-    # Use the pattern parameter to pass CallbackQueries with specific
-    # data pattern to the corresponding handlers.
-    # ^ means "start of line/string"
-    # $ means "end of line/string"
-    # So ^ABC$ will only allow 'ABC'
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            FIRST: [
+            TOP_LEVEL: [
                 CallbackQueryHandler(show_calendar, pattern='^' + str(ONE) + '$'),
-                CallbackQueryHandler(show_month_list, pattern='^' + str(Y2022) + '$'),
-                CallbackQueryHandler(show_month_oct, pattern='^' + str(OCT) + '$'),
-                CallbackQueryHandler(show_month_dec, pattern='^' + str(DEC) + '$'),
                 CallbackQueryHandler(show_archive, pattern='^' + str(ARCHIVE) + '$'),
-                CallbackQueryHandler(start_over, pattern='^' + str(START_OVER) + '$'),
-                CallbackQueryHandler(show_management, pattern='^' + str(MANAGEMENT) + '$'),
-                CallbackQueryHandler(go_back, pattern='^' + str(CREATE) + '$'),
-                CallbackQueryHandler(go_back, pattern='^' + str(EDIT) + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + str(MANAGEMENT) + '$'),
+                # CallbackQueryHandler(show_month_list, pattern='^' + str(Y2022) + '$'),
+                # CallbackQueryHandler(show_month_oct, pattern='^' + str(OCT) + '$'),
+                # CallbackQueryHandler(show_month_dec, pattern='^' + str(DEC) + '$'),
+                # CallbackQueryHandler(start_over, pattern='^' + str(START_OVER) + '$'),
+                # CallbackQueryHandler(go_back, pattern='^' + str(CREATE) + '$'),
+                # CallbackQueryHandler(go_back, pattern='^' + str(EDIT) + '$'),
             ],
-            SECOND: [
-                CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
-                CallbackQueryHandler(end, pattern='^' + str(TWO) + '$'),
+            CREATE_EVENT: [
+                CallbackQueryHandler(
+                    get_property_to_edit, pattern='^(' + EDIT_NAME + '|' + EDIT_CITY + '|' + EDIT_DESC + ')$'
+                ),
+                CallbackQueryHandler(
+                    get_date_to_edit, pattern='^(' + EDIT_DATE_START + ')$'
+                ),
+                CallbackQueryHandler(go_back, pattern='^' + str(BACK) + '$'),
+                MessageHandler(
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')),
+                    set_property_value,
+                )
             ],
-            # GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
-            # PHOTO: [MessageHandler(Filters.photo, photo), CommandHandler('skip', skip_photo)],
+            CREATE_DATE: [
+                CallbackQueryHandler(
+                    cal
+                ),
+            ]
         },
-        fallbacks=[CommandHandler('start', start)],
+        fallbacks=[CommandHandler('cancel', cancel)],
     )
 
-    # conv_handler_2 = ConversationHandler(
-    #     entry_points=[CallbackQueryHandler(show_management, pattern='^' + str(MANAGEMENT) + '$')],
-    #     states={
-    #         GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
-    #         PHOTO: [MessageHandler(Filters.photo, photo), CommandHandler('skip', skip_photo)],
-    #         # LOCATION: [
-    #         #     MessageHandler(Filters.location, location),
-    #         #     CommandHandler('skip', skip_location),
-    #         # ],
-    #         # BIO: [MessageHandler(Filters.text & ~Filters.command, bio)],
-    #     },
-    #     fallbacks=[CommandHandler('cancel', cancel)],
-    # )
-
-    # Add ConversationHandler to dispatcher that will be used for handling updates
     dispatcher.add_handler(conv_handler)
-    # dispatcher.add_handler(conv_handler_2)
 
     # Start the Bot
     updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
 
