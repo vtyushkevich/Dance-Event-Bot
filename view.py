@@ -17,14 +17,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Stages
-TOP_LEVEL, CREATE_EVENT, CREATE_DATE = range(3)
+TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
 # Callback data
-ONE, TWO, THREE, FOUR = range(4)
-Y2021, Y2022, Y2023, Y2024 = range(2021, 2025)
-ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE = 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE'
-JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC = range(1, 13)
+START, ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE, GO_BACK = 'START', 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE', 'GO_BACK'
 FLAG_RU, FLAG_TR, FLAG_HR = "\U0001F1F7\U0001F1FA", "\U0001F1F9\U0001F1F7", "\U0001F1ED\U0001F1F7"
-EDIT_NAME, EDIT_CITY, EDIT_DESC, EDIT_DATE_START = 'EDIT_NAME', 'EDIT_CITY', 'EDIT_DESC', 'EDIT_DATE_START'
+EDIT_NAME, EDIT_CITY, EDIT_DESC, EDIT_DATE_START, EDIT_DATE_END, EDIT_COUNTRY, EDIT_PHOTO = 'EDIT_NAME', 'EDIT_CITY', 'EDIT_DESC', 'EDIT_DATE_START', 'EDIT_DATE_END', 'EDIT_COUNTRY', 'EDIT_PHOTO'
 
 
 def start(update: Update, context: CallbackContext) -> int:
@@ -33,20 +30,27 @@ def start(update: Update, context: CallbackContext) -> int:
     logger.info("User %s started the conversation.", user.first_name)
     keyboard = [
         [
-            InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
+            InlineKeyboardButton("Посмотреть календарь событий", callback_data=START)
         ],
         [
-            InlineKeyboardButton("Создать событие", callback_data=str(MANAGEMENT))
+            InlineKeyboardButton("Создать событие", callback_data=MANAGEMENT)
         ],
         [
-            InlineKeyboardButton("Посмотреть архив", callback_data=str(ARCHIVE))
+            InlineKeyboardButton("Посмотреть архив", callback_data=ARCHIVE)
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    # Send message with text and appended InlineKeyboard
-    update.message.reply_text("\U0001F483Я бот для отслеживания танцевальных событий и покажу тебе, что происходит в мире танцев\U0001F525",
-                              reply_markup=reply_markup)
-    # Tell ConversationHandler that we're in state `FIRST` now
+    update.message.reply_text(
+        text="\U0001F483Я бот для отслеживания танцевальных событий и покажу тебе, что происходит в мире танцев\U0001F525",
+        reply_markup=reply_markup
+    )
+    context.user_data['EDIT_NAME'] = ""
+    context.user_data['EDIT_CITY'] = ""
+    context.user_data['EDIT_COUNTRY'] = ""
+    context.user_data['EDIT_DESC'] = ""
+    context.user_data['EDIT_DATE_START'] = ""
+    context.user_data['EDIT_DATE_END'] = ""
+    context.user_data['EDIT_PHOTO'] = ""
     return TOP_LEVEL
 
 
@@ -59,13 +63,13 @@ def start_over(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = [
         [
-            InlineKeyboardButton("Посмотреть календарь событий", callback_data=str(ONE))
+            InlineKeyboardButton("Посмотреть календарь событий", callback_data=START)
         ],
         [
-            InlineKeyboardButton("Создать событие", callback_data=str(MANAGEMENT))
+            InlineKeyboardButton("Создать событие", callback_data=MANAGEMENT)
         ],
         [
-            InlineKeyboardButton("Посмотреть архив", callback_data=str(ARCHIVE))
+            InlineKeyboardButton("Посмотреть архив", callback_data=ARCHIVE)
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -73,159 +77,13 @@ def start_over(update: Update, context: CallbackContext) -> int:
     # originated the CallbackQuery. This gives the feeling of an
     # interactive menu.
     query.edit_message_text(text="Что делаем дальше?", reply_markup=reply_markup)
-    return TOP_LEVEL
-
-
-def show_calendar(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("2022 год (6)", callback_data=str(Y2022))
-        ],
-        # [
-        #     InlineKeyboardButton("2023 год (0)", callback_data=str(Y2023))
-        # ],
-        [
-            InlineKeyboardButton("Архив", callback_data=ARCHIVE)
-        ],
-        [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
-        ],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Выбери период:", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def show_month_list(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Октябрь (3)", callback_data=str(OCT))
-        ],
-        # [
-        #     InlineKeyboardButton("Ноябрь (1)", callback_data=str(NOV))
-        # ],
-        [
-            InlineKeyboardButton("Декабрь (3)", callback_data=str(DEC))
-        ],
-        [
-            InlineKeyboardButton("Назад", callback_data=str(ONE))
-        ],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Выбери месяц:", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def show_month_oct(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Назад", callback_data=str(Y2022))
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    query.edit_message_text(
-        text="События в этом месяце:\n\n"
-             "1. " + FLAG_RU + "Открытый Кубок Черноземья (Воронеж) 3-4 октября\n\n"
-             "2. " + FLAG_HR + "ROVINJ SUMMER SENSUAL DAYS (Ровинь) 03-11 октября\n\n"
-             "3. " + FLAG_RU + "Volga Open Cup 2022 (Пенза) 09-11 октября", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def show_month_dec(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Назад", callback_data=str(Y2022))
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    query.edit_message_text(
-        text="События в этом месяце:\n\n"
-             "1. " + FLAG_TR + "FETHIYE DANCE CAMP (Фетхие) 3-11 декабря\n\n"
-             "2. " + FLAG_RU + "Открытый Южный Кубок 2022 (Анапа) 03-11 декабря\n\n"
-             "3. " + FLAG_RU + "RUSSIAN BACHATA FESTIVAL (Санкт-Петербург) 09-11 декабря", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def show_archive(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("2021 год (0)", callback_data=str(Y2021))
-        ],
-        # [
-        #     InlineKeyboardButton("2023 год (0)", callback_data=str(Y2023))
-        # ],
-        # [
-        #     InlineKeyboardButton("Архив", callback_data=ARCHIVE)
-        # ],
-        [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
-        ],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Выбери период:", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def show_management(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Создать событие", callback_data=str(CREATE))
-        ],
-        [
-            InlineKeyboardButton("Редактировать событие", callback_data=str(EDIT))
-        ],
-        [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
-        ],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Управление событиями", reply_markup=reply_markup
-    )
-    return TOP_LEVEL
-
-
-def go_back(update: Update, context: CallbackContext) -> int:
-    """Show new choice of buttons"""
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [
-            InlineKeyboardButton("Назад", callback_data=str(MANAGEMENT))
-        ],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Управление событиями", reply_markup=reply_markup
-    )
+    context.user_data['EDIT_NAME'] = ""
+    context.user_data['EDIT_CITY'] = ""
+    context.user_data['EDIT_COUNTRY'] = ""
+    context.user_data['EDIT_DESC'] = ""
+    context.user_data['EDIT_DATE_START'] = ""
+    context.user_data['EDIT_DATE_END'] = ""
+    context.user_data['EDIT_PHOTO'] = ""
     return TOP_LEVEL
 
 
@@ -236,7 +94,6 @@ def cancel(update: Update, context: CallbackContext) -> int:
     update.message.reply_text(
         'До встречи!', reply_markup=ReplyKeyboardRemove()
     )
-
     return ConversationHandler.END
 
 
@@ -244,12 +101,14 @@ def creating_event(update: Update, context: CallbackContext) -> int:
     """Show new choice of buttons"""
     query = update.callback_query
     query.answer()
+    # bot = Bot(BOT_TOKEN)
+    # bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
     keyboard = [
         [
             InlineKeyboardButton("Название события", callback_data=EDIT_NAME)
         ],
         [
-            InlineKeyboardButton("Страна", callback_data=str(Y2023))
+            InlineKeyboardButton("Страна", callback_data=EDIT_COUNTRY)
         ],
         [
             InlineKeyboardButton("Город", callback_data=EDIT_CITY)
@@ -258,26 +117,37 @@ def creating_event(update: Update, context: CallbackContext) -> int:
             InlineKeyboardButton("Дата начала", callback_data=EDIT_DATE_START)
         ],
         [
-            InlineKeyboardButton("Дата окончания", callback_data=str(START_OVER))
+            InlineKeyboardButton("Дата окончания", callback_data=EDIT_DATE_END)
         ],
         [
             InlineKeyboardButton("Описание", callback_data=EDIT_DESC)
         ],
         [
-            InlineKeyboardButton("Картинка", callback_data=str(START_OVER))
+            InlineKeyboardButton("Картинка", callback_data=EDIT_PHOTO)
         ],
         [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
+            InlineKeyboardButton("Назад", callback_data=START_OVER)
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text="Заполните данные о событии", reply_markup=reply_markup
+    # query.message.reply_photo(
+    #     photo=open('orange200.png', 'rb'), caption="Заполните данные о событии",
+    #     reply_markup=reply_markup
+    # )
+    # query.edit_message_caption(
+    #     caption="Заполните данные о событии", reply_markup=reply_markup
+    # )
+    query.message.edit_text(
+        text="Заполните данные о событии",
+        reply_markup=reply_markup
     )
-    context.user_data['EDIT_NAME'] = ""
-    context.user_data['EDIT_CITY'] = ""
-    context.user_data['EDIT_DESC'] = ""
-    context.user_data['EDIT_DATE_START'] = ""
+    # context.user_data['EDIT_NAME'] = ""
+    # context.user_data['EDIT_CITY'] = ""
+    # context.user_data['EDIT_COUNTRY'] = ""
+    # context.user_data['EDIT_DESC'] = ""
+    # context.user_data['EDIT_DATE_START'] = ""
+    # context.user_data['EDIT_DATE_END'] = ""
+    # context.user_data['EDIT_PHOTO'] = ""
 
     return CREATE_EVENT
 
@@ -292,14 +162,14 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = [
         [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
+            InlineKeyboardButton("Назад", callback_data=GO_BACK)
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.edit_message_text(
         text="Отправьте информацию сообщением", reply_markup=reply_markup
     )
-    return CREATE_EVENT
+    return CREATE_PROPERTY
 
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
@@ -322,7 +192,7 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
             InlineKeyboardButton("Название события: " + user_data[EDIT_NAME], callback_data=EDIT_NAME)
         ],
         [
-            InlineKeyboardButton("Страна", callback_data=str(Y2023))
+            InlineKeyboardButton("Страна" + user_data[EDIT_COUNTRY], callback_data=EDIT_COUNTRY)
         ],
         [
             InlineKeyboardButton("Город " + user_data[EDIT_CITY], callback_data=EDIT_CITY)
@@ -331,20 +201,22 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
             InlineKeyboardButton("Дата начала " + str(user_data[EDIT_DATE_START]), callback_data=EDIT_DATE_START)
         ],
         [
-            InlineKeyboardButton("Дата окончания", callback_data=str(START_OVER))
+            InlineKeyboardButton("Дата окончания" + str(user_data[EDIT_DATE_END]), callback_data=EDIT_DATE_END)
         ],
         [
             InlineKeyboardButton("Описание", callback_data=EDIT_DESC)
         ],
         [
-            InlineKeyboardButton("Картинка", callback_data=str(START_OVER))
+            InlineKeyboardButton("Картинка", callback_data=EDIT_PHOTO)
         ],
         [
-            InlineKeyboardButton("Назад", callback_data=str(START_OVER))
+            InlineKeyboardButton("Назад", callback_data=START_OVER)
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]),
+    update.message.reply_text(text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
+                              "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+                              "\n" + str(user_data[EDIT_DATE_END]) + " ",
                               reply_markup=reply_markup)
     return CREATE_EVENT
 
@@ -357,12 +229,6 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
 
     query = update.callback_query
     query.answer()
-    # keyboard = [
-    #     [
-    #         InlineKeyboardButton("Назад", callback_data=str(START_OVER))
-    #     ],
-    # ]
-    # reply_markup = InlineKeyboardMarkup(keyboard)
     calendar, step = DetailedTelegramCalendar(calendar_id=1).build()
     query.edit_message_text(
         text="Выберите дату", reply_markup=calendar
@@ -394,7 +260,7 @@ def cal(update: Update, context: CallbackContext):
                 InlineKeyboardButton("Название события: " + user_data[EDIT_NAME], callback_data=EDIT_NAME)
             ],
             [
-                InlineKeyboardButton("Страна", callback_data=str(Y2023))
+                InlineKeyboardButton("Страна" + user_data[EDIT_COUNTRY], callback_data=EDIT_COUNTRY)
             ],
             [
                 InlineKeyboardButton("Город " + user_data[EDIT_CITY], callback_data=EDIT_CITY)
@@ -403,21 +269,98 @@ def cal(update: Update, context: CallbackContext):
                 InlineKeyboardButton("Дата начала " + str(user_data[EDIT_DATE_START]), callback_data=EDIT_DATE_START)
             ],
             [
-                InlineKeyboardButton("Дата окончания", callback_data=str(START_OVER))
+                InlineKeyboardButton("Дата окончания" + str(user_data[EDIT_DATE_END]), callback_data=EDIT_DATE_END)
             ],
             [
                 InlineKeyboardButton("Описание", callback_data=EDIT_DESC)
             ],
             [
-                InlineKeyboardButton("Картинка", callback_data=str(START_OVER))
+                InlineKeyboardButton("Картинка", callback_data=EDIT_PHOTO)
             ],
             [
-                InlineKeyboardButton("Назад", callback_data=str(START_OVER))
+                InlineKeyboardButton("Назад", callback_data=START_OVER)
             ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(
-            user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]),
+            text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
+            "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+            "\n" + str(user_data[EDIT_DATE_END]) + " ",
             reply_markup=reply_markup
         )
         return CREATE_EVENT
+
+
+def get_photo_to_edit(update: Update, context: CallbackContext) -> int:
+    text = update.callback_query.data
+    context.user_data['property_to_edit'] = text
+    logger.info("property_to_edit - %s", text)
+
+    query = update.callback_query
+    query.answer()
+    keyboard = [
+        [
+            InlineKeyboardButton("Назад", callback_data=GO_BACK)
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.edit_message_text(
+        text="Загрузите фото", reply_markup=reply_markup
+    )
+
+    return CREATE_PHOTO
+
+
+def set_photo(update: Update, context: CallbackContext) -> int:
+    user_data = context.user_data
+    category = user_data['property_to_edit']
+    photo_file = update.message.photo[1]
+    logger.info('category - %s', photo_file)
+    photo_file_1 = update.message.photo[1].get_file()
+    logger.info('category - %s', photo_file_1)
+    photo_file_1.download()
+    # photo_file.download('event_photo.jpg')
+    user_data[category] = photo_file
+
+    logger.info('category - %s', category)
+
+    del user_data['property_to_edit']
+    keyboard = [
+        [
+            InlineKeyboardButton("Название события: " + user_data[EDIT_NAME], callback_data=EDIT_NAME)
+        ],
+        [
+            InlineKeyboardButton("Страна" + user_data[EDIT_COUNTRY], callback_data=EDIT_COUNTRY)
+        ],
+        [
+            InlineKeyboardButton("Город " + user_data[EDIT_CITY], callback_data=EDIT_CITY)
+        ],
+        [
+            InlineKeyboardButton("Дата начала " + str(user_data[EDIT_DATE_START]), callback_data=EDIT_DATE_START)
+        ],
+        [
+            InlineKeyboardButton("Дата окончания" + str(user_data[EDIT_DATE_END]), callback_data=EDIT_DATE_END)
+        ],
+        [
+            InlineKeyboardButton("Описание", callback_data=EDIT_DESC)
+        ],
+        [
+            InlineKeyboardButton("Картинка", callback_data=EDIT_PHOTO)
+        ],
+        [
+            InlineKeyboardButton("Назад", callback_data=START_OVER)
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text("Предварительный просмотр" + "\n" + user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
+                              "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+                              "\n" + str(user_data[EDIT_DATE_END]),
+                              reply_markup=reply_markup
+                              )
+
+    # update.message.reply_photo(
+    #     photo=photo_file, caption="Предварительный просмотр" + "\n" + user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
+    #     "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+    #     "\n" + str(user_data[EDIT_DATE_END]), reply_markup=reply_markup
+    # )
+    return CREATE_EVENT
