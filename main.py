@@ -20,9 +20,21 @@ from view import (
     cal,
     get_photo_to_edit,
     set_photo,
+    show_edit_preview,
+    publish_event
 )
 
-from view import EDIT_NAME, EDIT_CITY, EDIT_DESC, EDIT_DATE_START, EDIT_DATE_END, EDIT_COUNTRY, EDIT_PHOTO
+from view import (
+    EDIT_NAME,
+    EDIT_CITY,
+    EDIT_DESC,
+    EDIT_DATE_START,
+    EDIT_DATE_END,
+    EDIT_COUNTRY,
+    EDIT_PHOTO,
+    EDIT_PREVIEW,
+    PUBLISH_EVENT,
+)
 
 
 logging.basicConfig(
@@ -58,7 +70,16 @@ def main() -> None:
                     get_property_to_edit,
                     pattern='^(' + EDIT_NAME + '|' + EDIT_CITY + '|' + EDIT_DESC + '|' + EDIT_COUNTRY + ')$'
                 ),
+                CallbackQueryHandler(
+                    show_edit_preview,
+                    pattern='^(' + EDIT_PREVIEW + ')$'
+                ),
+                CallbackQueryHandler(
+                    publish_event,
+                    pattern='^(' + PUBLISH_EVENT + ')$'
+                ),
                 CallbackQueryHandler(start_over, pattern='^' + START_OVER + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + GO_BACK + '$'),
             ],
             CREATE_DATE: [
                 CallbackQueryHandler(
