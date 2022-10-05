@@ -104,13 +104,6 @@ def creating_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = set_keyboard(context)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    # query.message.reply_photo(
-    #     photo=open('orange200.png', 'rb'), caption="Заполните данные о событии",
-    #     reply_markup=reply_markup
-    # )
-    # query.edit_message_caption(
-    #     caption="Заполните данные о событии", reply_markup=reply_markup
-    # )
     query.message.edit_text(
         text="Заполните данные о событии",
         reply_markup=reply_markup
@@ -143,18 +136,17 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
 
     logger.info('category - %s', category)
     logger.info('set property - %s', text)
-    # logger.info('id_msg = %s', update.message.message_id)
-    # logger.info('id_chat = %s', update.message.chat_id)
     # bot = Bot(BOT_TOKEN)
     # bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
 
     del user_data['property_to_edit']
     keyboard = set_keyboard(context)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-                                   "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
-                                   "\n" + str(user_data[EDIT_DATE_END]) + " ",
-                              reply_markup=reply_markup)
+    update.message.reply_text(
+        text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
+        "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+        "\n" + str(user_data[EDIT_DATE_END]) + " ",
+        reply_markup=reply_markup)
     return CREATE_EVENT
 
 
@@ -195,8 +187,8 @@ def cal(update: Update, context: CallbackContext):
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(
             text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-                 "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
-                 "\n" + str(user_data[EDIT_DATE_END]) + " ",
+            "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
+            "\n" + str(user_data[EDIT_DATE_END]) + " ",
             reply_markup=reply_markup
         )
         return CREATE_EVENT
