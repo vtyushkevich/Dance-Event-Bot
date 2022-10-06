@@ -32,27 +32,28 @@ FLAG_RU, FLAG_TR, FLAG_HR = (
     "\U0001F1F9\U0001F1F7",
     "\U0001F1ED\U0001F1F7",
 )
-(
-    EDIT_NAME,
-    EDIT_CITY,
-    EDIT_DESC,
-    EDIT_DATE_START,
-    EDIT_DATE_END,
-    EDIT_COUNTRY,
-    EDIT_PHOTO,
-    EDIT_PREVIEW,
-    PUBLISH_EVENT
-) = (
-    'EDIT_NAME',
-    'EDIT_CITY',
-    'EDIT_DESC',
-    'EDIT_DATE_START',
-    'EDIT_DATE_END',
-    'EDIT_COUNTRY',
-    'EDIT_PHOTO',
-    'EDIT_PREVIEW',
-    'PUBLISH_EVENT'
-)
+# (
+#     EDIT_NAME,
+#     EDIT_CITY,
+#     EDIT_DESC,
+#     EDIT_DATE_START,
+#     EDIT_DATE_END,
+#     EDIT_COUNTRY,
+#     EDIT_PHOTO,
+#     EDIT_PREVIEW,
+#     PUBLISH_EVENT
+# ) = (
+#     'EDIT_NAME',
+#     'EDIT_CITY',
+#     'EDIT_DESC',
+#     'EDIT_DATE_START',
+#     'EDIT_DATE_END',
+#     'EDIT_COUNTRY',
+#     'EDIT_PHOTO',
+#     'EDIT_PREVIEW',
+#     'PUBLISH_EVENT'
+# )
+import const as con
 
 
 def start(update: Update, context: CallbackContext) -> int:
@@ -143,9 +144,9 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
     keyboard = set_keyboard(context)
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
-        text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-        "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
-        "\n" + str(user_data[EDIT_DATE_END]) + " ",
+        text=user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] + "\n" + user_data[con.EDIT_COUNTRY] +
+        "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) +
+        "\n" + str(user_data[con.EDIT_DATE_END]) + " ",
         reply_markup=reply_markup)
     return CREATE_EVENT
 
@@ -186,9 +187,9 @@ def cal(update: Update, context: CallbackContext):
         keyboard = set_keyboard(context)
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(
-            text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-            "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
-            "\n" + str(user_data[EDIT_DATE_END]) + " ",
+            text=user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] + "\n" + user_data[con.EDIT_COUNTRY] +
+            "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) +
+            "\n" + str(user_data[con.EDIT_DATE_END]) + " ",
             reply_markup=reply_markup
         )
         return CREATE_EVENT
@@ -228,9 +229,9 @@ def set_photo(update: Update, context: CallbackContext) -> int:
     del user_data['property_to_edit']
     keyboard = set_keyboard(context)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("Предварительный просмотр" + "\n" + user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] +
-                              "\n" + user_data[EDIT_COUNTRY] + "\n" + user_data[EDIT_DESC] +
-                              "\n" + str(user_data[EDIT_DATE_START]) + "\n" + str(user_data[EDIT_DATE_END]),
+    update.message.reply_text("Предварительный просмотр" + "\n" + user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] +
+                              "\n" + user_data[con.EDIT_COUNTRY] + "\n" + user_data[con.EDIT_DESC] +
+                              "\n" + str(user_data[con.EDIT_DATE_START]) + "\n" + str(user_data[con.EDIT_DATE_END]),
                               reply_markup=reply_markup
                               )
 
@@ -245,22 +246,22 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     keyboard = [
-        [InlineKeyboardButton("Опубликовать", callback_data=PUBLISH_EVENT)],
+        [InlineKeyboardButton("Опубликовать", callback_data=con.PUBLISH_EVENT)],
         [InlineKeyboardButton("Назад", callback_data=GO_BACK)],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     if context.user_data['EDIT_PHOTO']:
         query.message.reply_photo(
             photo=context.user_data['EDIT_PHOTO'],
-            caption=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-            "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) + "\n" + str(user_data[EDIT_DATE_END]),
+            caption=user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] + "\n" + user_data[con.EDIT_COUNTRY] +
+            "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) + "\n" + str(user_data[con.EDIT_DATE_END]),
             reply_markup=reply_markup
         )
     else:
         query.edit_message_text(
-            text=user_data[EDIT_NAME] + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] +
-            "\n" + user_data[EDIT_DESC] + "\n" + str(user_data[EDIT_DATE_START]) +
-            "\n" + str(user_data[EDIT_DATE_END]) + " ",
+            text=user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] + "\n" + user_data[con.EDIT_COUNTRY] +
+            "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) +
+            "\n" + str(user_data[con.EDIT_DATE_END]) + " ",
             reply_markup=reply_markup
         )
     return CREATE_EVENT
@@ -282,26 +283,26 @@ def publish_event(update: Update, context: CallbackContext) -> int:
 
 
 def set_default_userdata(context: CallbackContext):
-    context.user_data['EDIT_NAME'] = "Название события"
-    context.user_data['EDIT_CITY'] = ""
-    context.user_data['EDIT_COUNTRY'] = ""
-    context.user_data['EDIT_DESC'] = ""
-    context.user_data['EDIT_DATE_START'] = ""
-    context.user_data['EDIT_DATE_END'] = ""
-    context.user_data['EDIT_PHOTO'] = ""
+    context.user_data[con.EDIT_NAME] = "Название события"
+    context.user_data[con.EDIT_CITY] = ""
+    context.user_data[con.EDIT_COUNTRY] = ""
+    context.user_data[con.EDIT_DESC] = ""
+    context.user_data[con.EDIT_DATE_START] = ""
+    context.user_data[con.EDIT_DATE_END] = ""
+    context.user_data[con.EDIT_PHOTO] = ""
 
 
 def set_keyboard(context: CallbackContext):
     user_data = context.user_data
     keyboard = [
-        [InlineKeyboardButton("Название события: " + user_data[EDIT_NAME], callback_data=EDIT_NAME)],
-        [InlineKeyboardButton("Страна" + user_data[EDIT_COUNTRY], callback_data=EDIT_COUNTRY)],
-        [InlineKeyboardButton("Город " + user_data[EDIT_CITY], callback_data=EDIT_CITY)],
-        [InlineKeyboardButton("Дата начала " + str(user_data[EDIT_DATE_START]), callback_data=EDIT_DATE_START)],
-        [InlineKeyboardButton("Дата окончания" + str(user_data[EDIT_DATE_END]), callback_data=EDIT_DATE_END)],
-        [InlineKeyboardButton("Описание", callback_data=EDIT_DESC)],
-        [InlineKeyboardButton("Картинка", callback_data=EDIT_PHOTO)],
-        [InlineKeyboardButton("Предварительный просмотр", callback_data=EDIT_PREVIEW)],
+        [InlineKeyboardButton("Название события: " + user_data[con.EDIT_NAME], callback_data=con.EDIT_NAME)],
+        [InlineKeyboardButton("Страна" + user_data[con.EDIT_COUNTRY], callback_data=con.EDIT_COUNTRY)],
+        [InlineKeyboardButton("Город " + user_data[con.EDIT_CITY], callback_data=con.EDIT_CITY)],
+        [InlineKeyboardButton("Дата начала " + str(user_data[con.EDIT_DATE_START]), callback_data=con.EDIT_DATE_START)],
+        [InlineKeyboardButton("Дата окончания" + str(user_data[con.EDIT_DATE_END]), callback_data=con.EDIT_DATE_END)],
+        [InlineKeyboardButton("Описание", callback_data=con.EDIT_DESC)],
+        [InlineKeyboardButton("Картинка", callback_data=con.EDIT_PHOTO)],
+        [InlineKeyboardButton("Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
         [InlineKeyboardButton("Назад", callback_data=START_OVER)],
     ]
     return keyboard

@@ -24,17 +24,7 @@ from view import (
     publish_event
 )
 
-from view import (
-    EDIT_NAME,
-    EDIT_CITY,
-    EDIT_DESC,
-    EDIT_DATE_START,
-    EDIT_DATE_END,
-    EDIT_COUNTRY,
-    EDIT_PHOTO,
-    EDIT_PREVIEW,
-    PUBLISH_EVENT,
-)
+import const as con
 
 
 logging.basicConfig(
@@ -61,22 +51,22 @@ def main() -> None:
             ],
             CREATE_EVENT: [
                 CallbackQueryHandler(
-                    get_date_to_edit, pattern='^(' + EDIT_DATE_START + '|' + EDIT_DATE_END + ')$'
+                    get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
                 ),
                 CallbackQueryHandler(
-                    get_photo_to_edit, pattern='^(' + EDIT_PHOTO + ')$'
+                    get_photo_to_edit, pattern='^(' + con.EDIT_PHOTO + ')$'
                 ),
                 CallbackQueryHandler(
                     get_property_to_edit,
-                    pattern='^(' + EDIT_NAME + '|' + EDIT_CITY + '|' + EDIT_DESC + '|' + EDIT_COUNTRY + ')$'
+                    pattern='^(' + con.EDIT_NAME + '|' + con.EDIT_CITY + '|' + con.EDIT_DESC + '|' + con.EDIT_COUNTRY + ')$'
                 ),
                 CallbackQueryHandler(
                     show_edit_preview,
-                    pattern='^(' + EDIT_PREVIEW + ')$'
+                    pattern='^(' + con.EDIT_PREVIEW + ')$'
                 ),
                 CallbackQueryHandler(
                     publish_event,
-                    pattern='^(' + PUBLISH_EVENT + ')$'
+                    pattern='^(' + con.PUBLISH_EVENT + ')$'
                 ),
                 CallbackQueryHandler(start_over, pattern='^' + START_OVER + '$'),
                 CallbackQueryHandler(creating_event, pattern='^' + GO_BACK + '$'),
