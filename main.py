@@ -25,7 +25,6 @@ from view import (
 
 import const as con
 
-
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
@@ -52,7 +51,8 @@ def main() -> None:
                 ),
                 CallbackQueryHandler(
                     get_property_to_edit,
-                    pattern='^(' + con.EDIT_NAME + '|' + con.EDIT_CITY + '|' + con.EDIT_DESC + '|' + con.EDIT_COUNTRY + ')$'
+                    pattern='^(' + con.EDIT_NAME + '|' + con.EDIT_CITY + '|' +
+                            con.EDIT_DESC + '|' + con.EDIT_COUNTRY + ')$'
                 ),
                 CallbackQueryHandler(
                     show_edit_preview,
@@ -85,7 +85,7 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ]
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start),],
     )
     dispatcher.add_handler(conv_handler)
 

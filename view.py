@@ -1,14 +1,14 @@
 import logging
 import const as con
 from telegram import (
-    InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, ReplyKeyboardRemove,
-    Message, Bot
+    InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardRemove,
+    # Message, Bot
 )
 from telegram.ext import (
     CallbackContext,
     ConversationHandler
 )
-from config import BOT_TOKEN
+# from config import BOT_TOKEN
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
 logging.basicConfig(
@@ -190,7 +190,8 @@ def set_photo(update: Update, context: CallbackContext) -> int:
     del user_data['property_to_edit']
     keyboard = set_keyboard(context)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("Предварительный просмотр" + "\n" + user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] +
+    update.message.reply_text("Предварительный просмотр" +
+                              "\n" + user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] +
                               "\n" + user_data[con.EDIT_COUNTRY] + "\n" + user_data[con.EDIT_DESC] +
                               "\n" + str(user_data[con.EDIT_DATE_START]) + "\n" + str(user_data[con.EDIT_DATE_END]),
                               reply_markup=reply_markup
@@ -215,7 +216,8 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
         query.message.reply_photo(
             photo=context.user_data['EDIT_PHOTO'],
             caption=user_data[con.EDIT_NAME] + "\n" + user_data[con.EDIT_CITY] + "\n" + user_data[con.EDIT_COUNTRY] +
-            "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) + "\n" + str(user_data[con.EDIT_DATE_END]),
+            "\n" + user_data[con.EDIT_DESC] + "\n" + str(user_data[con.EDIT_DATE_START]) +
+            "\n" + str(user_data[con.EDIT_DATE_END]),
             reply_markup=reply_markup
         )
     else:
@@ -229,7 +231,6 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
 
 
 def publish_event(update: Update, context: CallbackContext) -> int:
-    user_data = context.user_data
     query = update.callback_query
     query.answer()
     keyboard = [
