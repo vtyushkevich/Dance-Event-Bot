@@ -4,7 +4,6 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     ConversationHandler,
-    CallbackContext,
     MessageHandler,
     Filters,
 )
@@ -24,28 +23,13 @@ from view import (
     publish_event
 )
 
-from view import (
-    EDIT_NAME,
-    EDIT_CITY,
-    EDIT_DESC,
-    EDIT_DATE_START,
-    EDIT_DATE_END,
-    EDIT_COUNTRY,
-    EDIT_PHOTO,
-    EDIT_PREVIEW,
-    PUBLISH_EVENT,
-)
+import const as con
 
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-# Stages
-TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
-# Callback data
-START, ARCHIVE, START_OVER, MANAGEMENT, EDIT, CREATE, GO_BACK = 'START', 'ARCHIVE', 'START_OVER', 'MANAGEMENT', 'EDIT', 'CREATE', 'GO_BACK'
 
 
 def main() -> None:
@@ -56,54 +40,53 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            TOP_LEVEL: [
-                CallbackQueryHandler(creating_event, pattern='^' + MANAGEMENT + '$'),
+            con.TOP_LEVEL: [
+                CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
             ],
-            CREATE_EVENT: [
+            con.CREATE_EVENT: [
                 CallbackQueryHandler(
-                    get_date_to_edit, pattern='^(' + EDIT_DATE_START + '|' + EDIT_DATE_END + ')$'
+                    get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
                 ),
                 CallbackQueryHandler(
-                    get_photo_to_edit, pattern='^(' + EDIT_PHOTO + ')$'
+                    get_photo_to_edit, pattern='^(' + con.EDIT_PHOTO + ')$'
                 ),
                 CallbackQueryHandler(
                     get_property_to_edit,
-                    pattern='^(' + EDIT_NAME + '|' + EDIT_CITY + '|' + EDIT_DESC + '|' + EDIT_COUNTRY + ')$'
+                    pattern='^(' + con.EDIT_NAME + '|' + con.EDIT_CITY + '|' + con.EDIT_DESC + '|' + con.EDIT_COUNTRY + ')$'
                 ),
                 CallbackQueryHandler(
                     show_edit_preview,
-                    pattern='^(' + EDIT_PREVIEW + ')$'
+                    pattern='^(' + con.EDIT_PREVIEW + ')$'
                 ),
                 CallbackQueryHandler(
                     publish_event,
-                    pattern='^(' + PUBLISH_EVENT + ')$'
+                    pattern='^(' + con.PUBLISH_EVENT + ')$'
                 ),
-                CallbackQueryHandler(start_over, pattern='^' + START_OVER + '$'),
-                CallbackQueryHandler(creating_event, pattern='^' + GO_BACK + '$'),
+                CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
-            CREATE_DATE: [
+            con.CREATE_DATE: [
                 CallbackQueryHandler(
                     cal
                 ),
             ],
-            CREATE_PROPERTY: [
+            con.CREATE_PROPERTY: [
                 MessageHandler(
                     Filters.text & ~(Filters.command | Filters.regex('^Done$')),
                     set_property_value,
                 ),
-                CallbackQueryHandler(creating_event, pattern='^' + GO_BACK + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
-            CREATE_PHOTO: [
+            con.CREATE_PHOTO: [
                 MessageHandler(
                     Filters.photo & ~(Filters.command | Filters.regex('^Done$')),
                     set_photo,
                 ),
-                CallbackQueryHandler(creating_event, pattern='^' + GO_BACK + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )
-
     dispatcher.add_handler(conv_handler)
 
     # Start the Bot
