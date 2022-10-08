@@ -38,7 +38,7 @@ def start_over(update: Update, context: CallbackContext) -> int:
     keyboard = set_keyboard(context, con.START)
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.edit_message_text(
-        text="Что делаем дальше?",
+        text="\U000026F3 Что делаем дальше?",
         reply_markup=reply_markup
     )
     set_default_userdata(context)
@@ -59,10 +59,17 @@ def creating_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = set_keyboard(context, con.CREATE)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.edit_text(
-        text=con.TEXT_REQUEST[con.CREATE_EVENT],
-        reply_markup=reply_markup
-    )
+    if query.message.caption:
+        query.message.delete()
+        query.message.reply_text(
+            text=con.TEXT_REQUEST[con.CREATE_EVENT],
+            reply_markup=reply_markup
+        )
+    else:
+        query.message.edit_text(
+            text=con.TEXT_REQUEST[con.CREATE_EVENT],
+            reply_markup=reply_markup
+        )
     return con.CREATE_EVENT
 
 
@@ -88,20 +95,32 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     text = update.message.text
     category = user_data['property_to_edit']
-    user_data[category] = text
+    _validation_passed, _validation_comment = validate_user_data(category, text)
+    if _validation_passed:
+        user_data[category] = text
 
-    logger.info('category - %s', category)
-    logger.info('set property - %s', text)
-    # bot = Bot(BOT_TOKEN)
-    # bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
+        logger.info('category - %s', category)
+        logger.info('set property - %s', text)
+        # bot = Bot(BOT_TOKEN)
+        # bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
 
-    del user_data['property_to_edit']
-    keyboard = set_keyboard(context, con.CREATE)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(
-        text=con.TEXT_REQUEST[con.CREATE_EVENT],
-        reply_markup=reply_markup
-    )
+        del user_data['property_to_edit']
+        keyboard = set_keyboard(context, con.CREATE)
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(
+            text=con.TEXT_REQUEST[con.CREATE_EVENT],
+            reply_markup=reply_markup
+        )
+    else:
+        keyboard = [
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(
+            text=_validation_comment,
+            reply_markup=reply_markup
+        )
+        return con.CREATE_PROPERTY
     return con.CREATE_EVENT
 
 
@@ -174,11 +193,10 @@ def set_photo(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     category = user_data['property_to_edit']
     photo_file = update.message.photo[1]
-    logger.info('category - %s', photo_file)
+    logger.info('photo_file - %s', photo_file)
     photo_file_1 = update.message.photo[1].get_file()
-    logger.info('category - %s', photo_file_1)
-    photo_file_1.download()
-    # photo_file.download('event_photo.jpg')
+    logger.info('photo_file_1 - %s', photo_file_1)
+    photo_file_1.download(custom_path='./banners/' + photo_file_1.file_unique_id)
     user_data[category] = photo_file
 
     logger.info('category - %s', category)
@@ -190,10 +208,9 @@ def set_photo(update: Update, context: CallbackContext) -> int:
         con.TEXT_REQUEST[con.CREATE_EVENT],
         reply_markup=reply_markup
     )
-
-    # update.message.reply_photo( photo=photo_file, caption="Предварительный просмотр" + "\n" + user_data[EDIT_NAME]
-    # + "\n" + user_data[EDIT_CITY] + "\n" + user_data[EDIT_COUNTRY] + "\n" + user_data[EDIT_DESC] + "\n" + str(
-    # user_data[EDIT_DATE_START]) + "\n" + str(user_data[EDIT_DATE_END]), reply_markup=reply_markup )
+    # update.message.reply_photo(photo=photo_file,
+    # caption=con.TEXT_REQUEST[con.CREATE_EVENT],
+    # reply_markup=reply_markup)
     return con.CREATE_EVENT
 
 
@@ -209,6 +226,7 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     _text = generate_text_event(user_data[con.EDIT_NAME], user_data[con.EDIT_CITY], user_data[con.EDIT_COUNTRY],
                                 user_data[con.EDIT_DATE_START], user_data[con.EDIT_DATE_END], user_data[con.EDIT_DESC])
     if context.user_data['EDIT_PHOTO']:
+        query.message.delete()
         query.message.reply_photo(
             photo=context.user_data['EDIT_PHOTO'],
             caption=_text,
@@ -229,6 +247,7 @@ def publish_event(update: Update, context: CallbackContext) -> int:
         [InlineKeyboardButton("Ок", callback_data=con.START_OVER)],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    query.message.delete()
     query.message.reply_text(
         text="Событие опубликовано!",
         reply_markup=reply_markup
@@ -292,10 +311,18 @@ def generate_text_event(
                                      event_date_start) + '\n' * 2
     _text = _text + '\U0001F3C1 ' + ("Дата окончания не указана" if event_date_end == "Дата окончания" else
                                      event_date_end) + '\n' * 2
-
     _text = _text + ("" if event_desc == "" else
                      'О событии:\n' + event_desc)
     return _text
+
+
+def validate_user_data(category: str, userdata):
+    validation_passed, validation_comment = None, None
+    if category == con.EDIT_NAME:
+        validation_passed = len(userdata) < 5
+        validation_comment = 'Название не должно быть длиннее 5 символов'
+        return validation_passed, validation_comment
+    return validation_passed, validation_comment
 
 
 def check_symbol(checked: bool):
