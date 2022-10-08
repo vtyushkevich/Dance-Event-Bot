@@ -66,6 +66,7 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
             con.CREATE_DATE: [
+                CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
                 CallbackQueryHandler(
                     cal
                 ),
