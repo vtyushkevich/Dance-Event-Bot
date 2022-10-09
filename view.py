@@ -222,6 +222,10 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     return con.CREATE_EVENT
 
 
+def show_event_calendar():
+    pass
+
+
 def publish_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
@@ -249,6 +253,12 @@ def set_default_userdata(context: CallbackContext):
 def set_keyboard(context: CallbackContext, stage: str):
     user_data = context.user_data
     keyboard = None
+    if stage == con.START:
+        keyboard = [
+            [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.START)],
+            [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
+            [InlineKeyboardButton("\U0001F5C4   Посмотреть архив", callback_data=con.ARCHIVE)],
+        ]
     if stage == con.CREATE:
         keyboard = [
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_NAME] != "Название события") +
@@ -267,12 +277,6 @@ def set_keyboard(context: CallbackContext, stage: str):
                                   "   Картинка", callback_data=con.EDIT_PHOTO)],
             [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER)],
-        ]
-    if stage == con.START:
-        keyboard = [
-            [InlineKeyboardButton("\U0001F4C6   Посмотреть календарь событий", callback_data=con.START)],
-            [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
-            [InlineKeyboardButton("\U0001F5C4   Посмотреть архив", callback_data=con.ARCHIVE)],
         ]
     return keyboard
 
