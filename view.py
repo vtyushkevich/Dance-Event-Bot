@@ -1,3 +1,4 @@
+from pathlib import Path
 import logging
 import const as con
 from telegram import (
@@ -133,7 +134,6 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
     query.answer()
     calendar, step = DetailedTelegramCalendar(calendar_id=1, additional_buttons=[
         {"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}]).build()
-    # logger.info("type(calendar) - %s", type(calendar))
     query.edit_message_text(
         text=con.TEXT_REQUEST[text],
         reply_markup=calendar
@@ -192,12 +192,10 @@ def get_photo_to_edit(update: Update, context: CallbackContext) -> int:
 def set_photo(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     category = user_data['property_to_edit']
-    photo_file = update.message.photo[1]
-    logger.info('photo_file - %s', photo_file)
-    photo_file_1 = update.message.photo[1].get_file()
-    logger.info('photo_file_1 - %s', photo_file_1)
-    photo_file_1.download(custom_path='./banners/' + photo_file_1.file_unique_id)
-    user_data[category] = photo_file
+    photo_file = update.message.photo[-1]
+    logger.info('set_photo____photo_file - %s', photo_file)
+    logger.info('set_photo____photo_file.file_id - %s', photo_file.file_id)
+    user_data[category] = photo_file.file_id
 
     logger.info('category - %s', category)
 
@@ -208,9 +206,43 @@ def set_photo(update: Update, context: CallbackContext) -> int:
         con.TEXT_REQUEST[con.CREATE_EVENT],
         reply_markup=reply_markup
     )
-    # update.message.reply_photo(photo=photo_file,
-    # caption=con.TEXT_REQUEST[con.CREATE_EVENT],
-    # reply_markup=reply_markup)
+    return con.CREATE_EVENT
+
+
+def set_doc(update: Update, context: CallbackContext) -> int:
+    user_data = context.user_data
+    category = user_data['property_to_edit']
+    doc_file = update.message.document
+    logger.info('set_doc____doc_file - %s', doc_file)
+    photo_file = doc_file.get_file()
+    photo_file.download(custom_path='./banners/' + photo_file.file_unique_id)
+
+    _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
+    _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
+    if _validation_passed and _validation_mime_passed:
+        user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
+        del user_data['property_to_edit']
+        keyboard = set_keyboard(context, con.CREATE)
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        _msg = update.message.reply_photo(
+            photo=open(user_data[category], 'rb'),
+            # reply_markup=reply_markup
+        )
+        user_data[category] = _msg.photo[-1]
+        update.message.reply_text(
+            con.TEXT_REQUEST[con.CREATE_EVENT],
+            reply_markup=reply_markup
+        )
+    else:
+        keyboard = [
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(
+            text=(_validation_comment if _validation_comment else _validation_mime_comment),
+            reply_markup=reply_markup
+        )
+        return con.CREATE_PHOTO
     return con.CREATE_EVENT
 
 
@@ -225,10 +257,11 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     reply_markup = InlineKeyboardMarkup(keyboard)
     _text = generate_text_event(user_data[con.EDIT_NAME], user_data[con.EDIT_CITY], user_data[con.EDIT_COUNTRY],
                                 user_data[con.EDIT_DATE_START], user_data[con.EDIT_DATE_END], user_data[con.EDIT_DESC])
-    if context.user_data['EDIT_PHOTO']:
+    if context.user_data[con.EDIT_PHOTO]:
+        logger.info('show_edit_preview - %s', context.user_data[con.EDIT_PHOTO])
         query.message.delete()
         query.message.reply_photo(
-            photo=context.user_data['EDIT_PHOTO'],
+            photo=context.user_data[con.EDIT_PHOTO],
             caption=_text,
             reply_markup=reply_markup
         )
@@ -249,7 +282,7 @@ def publish_event(update: Update, context: CallbackContext) -> int:
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.message.delete()
     query.message.reply_text(
-        text="Событие опубликовано!",
+        text="\U0001F4F0 Событие опубликовано!",
         reply_markup=reply_markup
     )
     return con.CREATE_EVENT
@@ -316,12 +349,32 @@ def generate_text_event(
     return _text
 
 
-def validate_user_data(category: str, userdata):
+def validate_user_data(category: str, userdata=None, mimetype=None):
     validation_passed, validation_comment = None, None
-    if category == con.EDIT_NAME:
-        validation_passed = len(userdata) < 5
-        validation_comment = 'Название не должно быть длиннее 5 символов'
-        return validation_passed, validation_comment
+    if category == con.EDIT_NAME or category == con.EDIT_COUNTRY or category == con.EDIT_CITY:
+        _name_len = 50
+        validation_passed = len(userdata) < _name_len
+        if not validation_passed:
+            validation_comment = '\U0001F6AB Название не должно быть длиннее ' + str(_name_len) + ' символов'
+            return validation_passed, validation_comment
+    if category == con.EDIT_DESC:
+        _name_len = 1024
+        validation_passed = len(userdata) < _name_len
+        if not validation_passed:
+            validation_comment = '\U0001F6AB Описание не должно быть длиннее ' + str(_name_len) + ' символов'
+            return validation_passed, validation_comment
+    if category == con.EDIT_PHOTO:
+        if userdata:
+            _name_len = 10485760
+            validation_passed = userdata < _name_len
+            if not validation_passed:
+                validation_comment = '\U0001F6AB Картинка не должна весить более 10 Мб'
+                return validation_passed, validation_comment
+        if mimetype:
+            validation_passed = mimetype == 'image/gif' or mimetype == 'image/jpeg' or mimetype == 'image/png'
+            if not validation_passed:
+                validation_comment = '\U0001F6AB Некорректный формат файла'
+                return validation_passed, validation_comment
     return validation_passed, validation_comment
 
 
