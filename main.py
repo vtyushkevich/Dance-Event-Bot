@@ -19,6 +19,7 @@ from view import (
     cal,
     get_photo_to_edit,
     set_photo,
+    set_doc,
     show_edit_preview,
     publish_event
 )
@@ -82,6 +83,10 @@ def main() -> None:
                 MessageHandler(
                     Filters.photo & ~(Filters.command | Filters.regex('^Done$')),
                     set_photo,
+                ),
+                MessageHandler(
+                    Filters.document & ~(Filters.command | Filters.regex('^Done$')),
+                    set_doc,
                 ),
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ]
