@@ -1,14 +1,15 @@
 import logging
 import const as con
+from models import MonthEventsData
 from telegram import (
     InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardRemove,
-    # Message, Bot
+    Message, Bot
 )
 from telegram.ext import (
     CallbackContext,
     ConversationHandler
 )
-# from config import BOT_TOKEN
+from config import BOT_TOKEN
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
 logging.basicConfig(
@@ -29,15 +30,27 @@ def start(update: Update, context: CallbackContext) -> int:
         reply_markup=reply_markup
     )
     set_default_userdata(context)
+    _text = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022', event_city='Челябинск', event_country='Россия',
+                                event_desc='Душевное вятское гостеприимство, высокий уровень организации мероприятий, атмосфера уюта, '
+                                           'праздника, дружбы,любви и радости, комфорт для каждого участника - всё это ждет вас на любом нашем танго-мероприятии.'
+                                           'Шикарный зал 700 кв. метров в самом центре города, шикарный пол, звук и свет,'
+                                           ' любимые маэстрос, оркестры и танго-диджеи и многое другое мы готовим для участников осеннего фестиваля.'
+                                           'В программе: ПЯТЬ милонг, ТРИ оркестра.'
+                                           'Показательные выступления Себастьяна Арсе и Марии Мариновой.'
+                                           'Показательные выступления Михаила Надточего и Эльвиры Ламбо.', event_date_end='2022-10-30', event_date_start='2022-10-28')
+    context.user_data['FAKE_TEXT'] = _text
     return con.TOP_LEVEL
 
 
 def start_over(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    query.delete_message()
+    # bot = Bot(BOT_TOKEN)
+    # bot.delete_message(chat_id=update.callback_query.delete_message(), message_id=update.message.message_id)
     keyboard = set_keyboard(context, con.START)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
+    query.message.reply_text(
         text="Что делаем дальше?",
         reply_markup=reply_markup
     )
@@ -57,7 +70,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
 def creating_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    keyboard = set_keyboard(context, con.CREATE)
+    keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.message.edit_text(
         text=con.TEXT_REQUEST[con.CREATE_EVENT],
@@ -96,7 +109,7 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
     # bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
 
     del user_data['property_to_edit']
-    keyboard = set_keyboard(context, con.CREATE)
+    keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
         text=con.TEXT_REQUEST[con.CREATE_EVENT],
@@ -142,7 +155,7 @@ def cal(update: Update, context: CallbackContext):
         logger.info('set date - %s', result)
 
         del user_data['property_to_edit']
-        keyboard = set_keyboard(context, con.CREATE)
+        keyboard = set_keyboard(context, con.CREATE_EVENT)
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(
             text=con.TEXT_REQUEST[con.CREATE_EVENT],
@@ -184,7 +197,7 @@ def set_photo(update: Update, context: CallbackContext) -> int:
     logger.info('category - %s', category)
 
     del user_data['property_to_edit']
-    keyboard = set_keyboard(context, con.CREATE)
+    keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
         con.TEXT_REQUEST[con.CREATE_EVENT],
@@ -222,10 +235,6 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     return con.CREATE_EVENT
 
 
-def show_event_calendar():
-    pass
-
-
 def publish_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
@@ -238,6 +247,80 @@ def publish_event(update: Update, context: CallbackContext) -> int:
         reply_markup=reply_markup
     )
     return con.CREATE_EVENT
+
+
+def show_event_calendar(update: Update, context: CallbackContext) -> int:
+    # month_events_data_0 = MonthEventsData('month_events_data_0')
+    # month_events_data_1 = MonthEventsData('month_events_data_1')
+    # month_events_data_2 = MonthEventsData('month_events_data_2')
+    # month_events_data_3 = MonthEventsData('month_events_data_3')
+    # month_events_data_4 = MonthEventsData('month_events_data_4')
+    #
+    # month_events_data_0.random()
+    # month_events_data_1.random()
+    # month_events_data_2.random()
+    # month_events_data_3.random()
+    # month_events_data_4.random()
+    #
+    # context.user_data['month_events_data_0'] = month_events_data_0
+    # context.user_data['month_events_data_1'] = month_events_data_1
+    # context.user_data['month_events_data_2'] = month_events_data_2
+    # context.user_data['month_events_data_3'] = month_events_data_3
+    # context.user_data['month_events_data_4'] = month_events_data_4
+    query = update.callback_query
+    query.answer()
+    query.delete_message()
+    _text = context.user_data['FAKE_TEXT']
+    if _text:
+        keyboard = set_keyboard(context, con.CALENDAR)
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_photo(
+            photo='AgACAgIAAxkBAAIC8mNEWei1pJxkp_kZXTGbHNV6tF1ZAALfwzEbsOsgSjmF2xeA2UOiAQADAgADbQADKgQ',
+            caption=_text,
+            reply_markup=reply_markup
+        )
+    else:
+        keyboard = [
+            [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text(
+            text="Нет активных событий",
+            reply_markup=reply_markup
+        )
+    return con.CALENDAR
+
+
+def delete_event_confirm(update: Update, context: CallbackContext) -> int:
+    query = update.callback_query
+    query.answer()
+    query.delete_message()
+    keyboard = [
+        [InlineKeyboardButton("Удалить", callback_data=con.DELETE_EVENT_OK)],
+        [InlineKeyboardButton("Назад", callback_data=con.CALENDAR)],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.message.reply_text(
+        text="Вы уверены, что хотите удалить событие?",
+        reply_markup=reply_markup
+    )
+    return con.CALENDAR
+
+
+def delete_event(update: Update, context: CallbackContext) -> int:
+    query = update.callback_query
+    query.answer()
+    query.delete_message()
+    context.user_data['FAKE_TEXT'] = ''
+    keyboard = [
+        [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.message.reply_text(
+        text="Событие удалено!",
+        reply_markup=reply_markup
+    )
+    return con.CALENDAR
 
 
 def set_default_userdata(context: CallbackContext):
@@ -255,11 +338,11 @@ def set_keyboard(context: CallbackContext, stage: str):
     keyboard = None
     if stage == con.START:
         keyboard = [
-            [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.START)],
+            [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)],
             [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
             [InlineKeyboardButton("\U0001F5C4   Посмотреть архив", callback_data=con.ARCHIVE)],
         ]
-    if stage == con.CREATE:
+    if stage == con.CREATE_EVENT:
         keyboard = [
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_NAME] != "Название события") +
                                   "   " + user_data[con.EDIT_NAME], callback_data=con.EDIT_NAME)],
@@ -277,6 +360,16 @@ def set_keyboard(context: CallbackContext, stage: str):
                                   "   Картинка", callback_data=con.EDIT_PHOTO)],
             [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER)],
+        ]
+    if stage == con.CALENDAR:
+        keyboard = [
+            [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT)],
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+            # [InlineKeyboardButton(str(context.user_data['month_events_data_0'].month) + ' ' + str(context.user_data['month_events_data_0'].year), callback_data=context.user_data['month_events_data_0'].callback)],
+            # [InlineKeyboardButton(str(context.user_data['month_events_data_1'].month) + ' ' + str(context.user_data['month_events_data_1'].year), callback_data=context.user_data['month_events_data_1'].callback)],
+            # [InlineKeyboardButton(str(context.user_data['month_events_data_2'].month) + ' ' + str(context.user_data['month_events_data_2'].year), callback_data=context.user_data['month_events_data_2'].callback)],
+            # [InlineKeyboardButton(str(context.user_data['month_events_data_3'].month) + ' ' + str(context.user_data['month_events_data_3'].year), callback_data=context.user_data['month_events_data_3'].callback)],
+            # [InlineKeyboardButton(str(context.user_data['month_events_data_4'].month) + ' ' + str(context.user_data['month_events_data_4'].year), callback_data=context.user_data['month_events_data_4'].callback)],
         ]
     return keyboard
 
