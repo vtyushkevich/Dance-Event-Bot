@@ -45,15 +45,21 @@ def start(update: Update, context: CallbackContext) -> int:
 def start_over(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    query.delete_message()
     # bot = Bot(BOT_TOKEN)
     # bot.delete_message(chat_id=update.callback_query.delete_message(), message_id=update.message.message_id)
     keyboard = set_keyboard(context, con.START)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.reply_text(
-        text="Что делаем дальше?",
-        reply_markup=reply_markup
-    )
+    if context.user_data['FAKE_TEXT']:
+        query.delete_message()
+        query.message.reply_text(
+            text="Что делаем дальше?",
+            reply_markup=reply_markup
+        )
+    else:
+        query.message.edit_text(
+            text="Что делаем дальше?",
+            reply_markup=reply_markup
+        )
     set_default_userdata(context)
     return con.TOP_LEVEL
 
@@ -269,9 +275,9 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
     # context.user_data['month_events_data_4'] = month_events_data_4
     query = update.callback_query
     query.answer()
-    query.delete_message()
     _text = context.user_data['FAKE_TEXT']
     if _text:
+        query.delete_message()
         keyboard = set_keyboard(context, con.CALENDAR)
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_photo(
@@ -284,7 +290,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
             [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.reply_text(
+        query.message.edit_text(
             text="Нет активных событий",
             reply_markup=reply_markup
         )
@@ -310,13 +316,12 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
 def delete_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    query.delete_message()
     context.user_data['FAKE_TEXT'] = ''
     keyboard = [
         [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.reply_text(
+    query.message.edit_text(
         text="Событие удалено!",
         reply_markup=reply_markup
     )

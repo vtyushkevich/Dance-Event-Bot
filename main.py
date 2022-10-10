@@ -90,6 +90,7 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
             con.CALENDAR: [
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_EVENT_OK + '$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
