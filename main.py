@@ -26,7 +26,6 @@ from view import (
     delete_event,
     delete_event_confirm,
 )
-
 import const as con
 
 logging.basicConfig(
