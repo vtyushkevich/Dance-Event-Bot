@@ -51,7 +51,7 @@ def start_over(update: Update, context: CallbackContext) -> int:
     if context.user_data['FAKE_TEXT']:
         query.delete_message()
         query.message.reply_text(
-            text="Что делаем дальше?",
+            text="\U000026F3 Что делаем дальше?",
             reply_markup=reply_markup
         )
     else:
@@ -326,6 +326,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     _text = context.user_data['FAKE_TEXT']
+    logger.info('show_event_calendar - %s', _text)
     if _text:
         query.delete_message()
         keyboard = set_keyboard(context, con.CALENDAR)

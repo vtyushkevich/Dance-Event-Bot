@@ -45,6 +45,7 @@ def main() -> None:
         states={
             con.TOP_LEVEL: [
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(
