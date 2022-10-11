@@ -12,6 +12,7 @@ from telegram.ext import (
 )
 from config import BOT_TOKEN
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from datetime import datetime, date, timedelta
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -31,14 +32,16 @@ def start(update: Update, context: CallbackContext) -> int:
         reply_markup=reply_markup
     )
     set_default_userdata(context)
-    _text = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022', event_city='Челябинск', event_country='Россия',
+    _text = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022', event_city='Челябинск',
+                                event_country='Россия',
                                 event_desc='Душевное вятское гостеприимство, высокий уровень организации мероприятий, атмосфера уюта, '
                                            'праздника, дружбы,любви и радости, комфорт для каждого участника - всё это ждет вас на любом нашем танго-мероприятии.'
                                            'Шикарный зал 700 кв. метров в самом центре города, шикарный пол, звук и свет,'
                                            ' любимые маэстрос, оркестры и танго-диджеи и многое другое мы готовим для участников осеннего фестиваля.'
                                            'В программе: ПЯТЬ милонг, ТРИ оркестра.'
                                            'Показательные выступления Себастьяна Арсе и Марии Мариновой.'
-                                           'Показательные выступления Михаила Надточего и Эльвиры Ламбо.', event_date_end='2022-10-30', event_date_start='2022-10-28')
+                                           'Показательные выступления Михаила Надточего и Эльвиры Ламбо.',
+                                event_date_end='2022-10-30', event_date_start='2022-10-28')
     context.user_data['FAKE_TEXT'] = _text
     return con.TOP_LEVEL
 
@@ -161,6 +164,7 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
 def cal(update: Update, context: CallbackContext):
     _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
     query = update.callback_query
+    logger.info('def cal - %s', update.callback_query.data)
     query.answer()
     result, key, step = DetailedTelegramCalendar().process(query.data)
     if not result and key:
@@ -172,18 +176,38 @@ def cal(update: Update, context: CallbackContext):
     elif result:
         user_data = context.user_data
         category = user_data['property_to_edit']
-        user_data[category] = _datetype[category] + str(result)
+        user_data[category + '_dt'] = result
+        _validation_passed, _validation_comment = validate_user_data(category + '_dt', checked_date=result)
+        if _validation_passed:
+            _validation_passed, _validation_comment = validate_user_data(
+                category + '_dt',
+                checked_date=user_data[con.EDIT_DATE_START + '_dt'],
+                checked_sec_date=user_data[con.EDIT_DATE_END + '_dt']
+            )
+        if _validation_passed:
+            user_data[category] = _datetype[category] + str(result)
 
-        logger.info('category - %s', category)
-        logger.info('set date - %s', result)
+            logger.info('category - %s', category)
+            logger.info('set date - %s', result)
 
-        del user_data['property_to_edit']
-        keyboard = set_keyboard(context, con.CREATE_EVENT)
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.edit_message_text(
-            text=con.TEXT_REQUEST[con.CREATE_EVENT],
-            reply_markup=reply_markup
-        )
+            del user_data['property_to_edit']
+            keyboard = set_keyboard(context, con.CREATE_EVENT)
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.edit_message_text(
+                text=con.TEXT_REQUEST[con.CREATE_EVENT],
+                reply_markup=reply_markup
+            )
+        else:
+            user_data[category + '_dt'] = None
+            keyboard = [
+                [InlineKeyboardButton("\U00002B05 Назад", callback_data=category)],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.edit_message_text(
+                text=_validation_comment,
+                reply_markup=reply_markup
+            )
+            return con.CREATE_DATE
         return con.CREATE_EVENT
 
 
@@ -386,6 +410,8 @@ def set_default_userdata(context: CallbackContext):
     context.user_data[con.EDIT_DESC] = ""
     context.user_data[con.EDIT_DATE_START] = "Дата начала"
     context.user_data[con.EDIT_DATE_END] = "Дата окончания"
+    context.user_data[con.EDIT_DATE_START + '_dt'] = None
+    context.user_data[con.EDIT_DATE_END + '_dt'] = None
     context.user_data[con.EDIT_PHOTO] = ""
 
 
@@ -451,8 +477,8 @@ def generate_text_event(
     return _text
 
 
-def validate_user_data(category: str, userdata=None, mimetype=None):
-    validation_passed, validation_comment = None, None
+def validate_user_data(category: str, userdata=None, mimetype=None, checked_date=None, checked_sec_date=None):
+    validation_passed, validation_comment = True, None
     if category == con.EDIT_NAME or category == con.EDIT_COUNTRY or category == con.EDIT_CITY:
         _name_len = 50
         validation_passed = len(userdata) < _name_len
@@ -477,6 +503,22 @@ def validate_user_data(category: str, userdata=None, mimetype=None):
             if not validation_passed:
                 validation_comment = '\U0001F6AB Некорректный формат файла'
                 return validation_passed, validation_comment
+    if category == con.EDIT_DATE_START + '_dt' and checked_date is not None or \
+            category == con.EDIT_DATE_END + '_dt' and checked_date is not None:
+        validation_passed = checked_date >= date.today()
+        if not validation_passed:
+            validation_comment = '\U0001F6AB Дата события не должна быть в прошлом времени'
+            return validation_passed, validation_comment
+    logger.info('category_val - %s', category)
+    logger.info('checked_date - %s', checked_date)
+    logger.info('checked_sec_date - %s', checked_sec_date)
+    if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt')\
+            and checked_date is not None and checked_sec_date is not None:
+        _delta: timedelta = (checked_sec_date - checked_date)
+        validation_passed = _delta.total_seconds() > 0
+        if not validation_passed:
+            validation_comment = '\U0001F6AB Дата окончания события не должна быть раньше начала события'
+            return validation_passed, validation_comment
     return validation_passed, validation_comment
 
 
