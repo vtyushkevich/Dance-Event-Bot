@@ -21,7 +21,10 @@ from view import (
     set_photo,
     set_doc,
     show_edit_preview,
-    publish_event
+    publish_event,
+    show_event_calendar,
+    delete_event,
+    delete_event_confirm,
 )
 
 import const as con
@@ -89,6 +92,12 @@ def main() -> None:
                     set_doc,
                 ),
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
+            ],
+            con.CALENDAR: [
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
+                CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '$'),
+                CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_EVENT_OK + '$'),
+                CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
             ]
         },
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start),],
