@@ -26,7 +26,6 @@ from view import (
     delete_event,
     delete_event_confirm,
 )
-
 import const as con
 
 logging.basicConfig(
@@ -73,7 +72,10 @@ def main() -> None:
             con.CREATE_DATE: [
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
                 CallbackQueryHandler(
-                    cal
+                    cal, pattern='^' + 'cbcal.*' + '$'
+                ),
+                CallbackQueryHandler(
+                    get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
                 ),
             ],
             con.CREATE_PROPERTY: [
