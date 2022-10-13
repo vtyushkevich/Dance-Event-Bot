@@ -291,10 +291,16 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     query = update.callback_query
     query.answer()
-    keyboard = [
-        [InlineKeyboardButton("Опубликовать", callback_data=con.PUBLISH_EVENT)],
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-    ]
+    _validation_passed, _validation_comment = validate_user_data(con.PUBLISH_EVENT, userdata=context)
+    if _validation_passed:
+        keyboard = [
+            [InlineKeyboardButton("Опубликовать", callback_data=con.PUBLISH_EVENT)],
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     _text = generate_text_event(user_data[con.EDIT_NAME], user_data[con.EDIT_CITY], user_data[con.EDIT_COUNTRY],
                                 user_data[con.EDIT_DATE_START], user_data[con.EDIT_DATE_END], user_data[con.EDIT_DESC])
@@ -486,7 +492,7 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
             validation_comment = '\U0001F6AB Название не должно быть длиннее ' + str(_name_len) + ' символов'
             return validation_passed, validation_comment
     if category == con.EDIT_DESC:
-        _name_len = 1024
+        _name_len = 1000
         validation_passed = len(userdata) < _name_len
         if not validation_passed:
             validation_comment = '\U0001F6AB Описание не должно быть длиннее ' + str(_name_len) + ' символов'
@@ -509,15 +515,22 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
         if not validation_passed:
             validation_comment = '\U0001F6AB Дата события не должна быть в прошлом времени'
             return validation_passed, validation_comment
-    logger.info('category_val - %s', category)
-    logger.info('checked_date - %s', checked_date)
-    logger.info('checked_sec_date - %s', checked_sec_date)
     if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt')\
             and checked_date is not None and checked_sec_date is not None:
         _delta: timedelta = (checked_sec_date - checked_date)
         validation_passed = _delta.total_seconds() > 0
         if not validation_passed:
             validation_comment = '\U0001F6AB Дата окончания события не должна быть раньше начала события'
+            return validation_passed, validation_comment
+    if category == con.PUBLISH_EVENT:
+        validation_passed = userdata.user_data[con.EDIT_NAME] != "Название события" \
+                            and userdata.user_data[con.EDIT_CITY] != "Город" \
+                            and userdata.user_data[con.EDIT_COUNTRY] != "Страна" \
+                            and userdata.user_data[con.EDIT_DESC] != "" \
+                            and userdata.user_data[con.EDIT_DATE_START + '_dt'] is not None \
+                            and userdata.user_data[con.EDIT_DATE_END + '_dt'] is not None
+        if not validation_passed:
+            validation_comment = '\U0001F6AB Не заполнены все поля события'
             return validation_passed, validation_comment
     return validation_passed, validation_comment
 
