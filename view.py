@@ -1,18 +1,15 @@
 from pathlib import Path
 import logging
 import const as con
-from models import MonthEventsData
 from telegram import (
     InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardRemove,
-    Message, Bot
 )
 from telegram.ext import (
     CallbackContext,
     ConversationHandler
 )
-from config import BOT_TOKEN
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
