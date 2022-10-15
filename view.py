@@ -20,12 +20,11 @@ logger = logging.getLogger(__name__)
 def start(update: Update, context: CallbackContext) -> int:
     """Send a message on `/start`."""
     logger.info("User %s started the conversation.", update.message.from_user.first_name)
-    keyboard = set_keyboard(context, con.START)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(
-        text="\U0001F483 Я бот для отслеживания танцевальных событий и расскажу, что происходит в мире танцев "
-             "\U0001F525",
-        reply_markup=reply_markup
+    _send_text_and_keyboard(
+        update=update.message.reply_text,
+        keyboard=set_keyboard(context, con.START),
+        message_text="\U0001F483 Я бот для отслеживания танцевальных событий и расскажу, что происходит в мире танцев "
+                     "\U0001F525",
     )
     set_default_userdata(context)
     context.user_data['FAKE_TEXT'] = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022',
@@ -46,22 +45,23 @@ def start(update: Update, context: CallbackContext) -> int:
 def start_over(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    keyboard = set_keyboard(context, con.START)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    _kwargs = {'text': "\U000026F3 Что делаем дальше?", 'reply_markup': reply_markup}
     if query.message.caption:
         query.delete_message()
-        query.message.reply_text(**_kwargs)
-    else:
-        query.edit_message_text(**_kwargs)
+    _send_text_and_keyboard(
+        update=query.message.reply_text if query.message.caption else query.edit_message_text,
+        keyboard=set_keyboard(context, con.START),
+        message_text="\U000026F3 Что делаем дальше?",
+    )
     set_default_userdata(context)
     return con.TOP_LEVEL
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
     logger.info("User %s canceled the conversation.", update.message.from_user.first_name)
-    update.message.reply_text(
-        'До встречи!', reply_markup=ReplyKeyboardRemove()
+    _send_text_and_keyboard(
+        update=update.message.reply_text,
+        keyboard='',
+        message_text='До встречи!',
     )
     return ConversationHandler.END
 
@@ -69,17 +69,13 @@ def cancel(update: Update, context: CallbackContext) -> int:
 def creating_event(update: Update, context: CallbackContext) -> int:
     update.callback_query.answer()
     message = update.callback_query.message
-    keyboard = set_keyboard(context, con.CREATE_EVENT)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    _kwargs = {
-        'text': con.TEXT_REQUEST[con.CREATE_EVENT],
-        'reply_markup': reply_markup
-    }
     if message.caption:
         message.delete()
-        message.reply_text(**_kwargs)
-    else:
-        message.edit_text(**_kwargs)
+    _send_text_and_keyboard(
+        update=message.reply_text if message.caption else message.edit_text,
+        keyboard=set_keyboard(context, con.CREATE_EVENT),
+        message_text=con.TEXT_REQUEST[con.CREATE_EVENT],
+    )
     return con.CREATE_EVENT
 
 
@@ -87,17 +83,18 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     context.user_data[con.PROPERTY_TO_EDIT] = query.data
-    keyboard = [[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    _kwargs = {
-        'text': con.TEXT_REQUEST[update.callback_query.data],
-        'reply_markup': reply_markup
-    }
-    query.edit_message_text(**_kwargs)
+    context.user_data[con.CALLBACK_QUERY] = query
+    _send_text_and_keyboard(
+        update=query.edit_message_text,
+        keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+        message_text=con.TEXT_REQUEST[query.data],
+    )
     return con.CREATE_PHOTO if query.data == con.EDIT_PHOTO else con.CREATE_PROPERTY
 
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
+    _cb = context.user_data[con.CALLBACK_QUERY]
+    _cb.message.delete()
     user_data = context.user_data
     input_from_user = update.message.text
     category = user_data[con.PROPERTY_TO_EDIT]
@@ -105,9 +102,6 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
     if _validation_passed:
         user_data[category] = input_from_user
         del user_data[con.PROPERTY_TO_EDIT]
-
-        logger.info("set_property_value - %s", set_keyboard(context, con.CREATE_EVENT))
-
         _send_text_and_keyboard(
             update=update.message.reply_text,
             keyboard=set_keyboard(context, con.CREATE_EVENT),
@@ -129,7 +123,7 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
     context.user_data[con.PROPERTY_TO_EDIT] = query.data
     calendar, step = DetailedTelegramCalendar(
         calendar_id=1,
-        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],).build()
+        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}], ).build()
     _send_text_and_keyboard(
         update=query.edit_message_text,
         keyboard=calendar,
@@ -180,86 +174,58 @@ def set_date_value(update: Update, context: CallbackContext):
             return con.CREATE_DATE
 
 
-# def get_photo_to_edit(update: Update, context: CallbackContext) -> int:
-#     text = update.callback_query.data
-#     context.user_data[con.PROPERTY_TO_EDIT] = text
-#     logger.info("property_to_edit - %s", text)
-#
-#     query = update.callback_query
-#     query.answer()
-#     keyboard = [
-#         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-#     ]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     query.edit_message_text(
-#         text=con.TEXT_REQUEST[text],
-#         reply_markup=reply_markup
-#     )
-#
-#     return con.CREATE_PHOTO
-
-
 def set_photo(update: Update, context: CallbackContext) -> int:
+    _cb = context.user_data[con.CALLBACK_QUERY]
+    _cb.message.delete()
     user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     photo_file = update.message.photo[-1]
-    logger.info('set_photo____photo_file - %s', photo_file)
-    logger.info('set_photo____photo_file.file_id - %s', photo_file.file_id)
     user_data[category] = photo_file.file_id
-
-    logger.info('category - %s', category)
-
     del user_data[con.PROPERTY_TO_EDIT]
-    keyboard = set_keyboard(context, con.CREATE_EVENT)
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text(
-        con.TEXT_REQUEST[con.CREATE_EVENT],
-        reply_markup=reply_markup
+    _send_text_and_keyboard(
+        update=update.message.reply_text,
+        keyboard=set_keyboard(context, con.CREATE_EVENT),
+        message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
     )
     return con.CREATE_EVENT
 
 
 def set_doc(update: Update, context: CallbackContext) -> int:
+    _cb = context.user_data[con.CALLBACK_QUERY]
+    _cb.message.delete()
     user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     doc_file = update.message.document
-    logger.info('set_doc____doc_file - %s', doc_file)
     photo_file = doc_file.get_file()
     photo_file.download(custom_path='./banners/' + photo_file.file_unique_id)
-
     _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
     _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
     if _validation_passed and _validation_mime_passed:
         user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
         del user_data[con.PROPERTY_TO_EDIT]
-        keyboard = set_keyboard(context, con.CREATE_EVENT)
-        reply_markup = InlineKeyboardMarkup(keyboard)
         _msg = update.message.reply_photo(
             photo=open(user_data[category], 'rb'),
-            # reply_markup=reply_markup
         )
         user_data[category] = _msg.photo[-1]
-        update.message.reply_text(
-            con.TEXT_REQUEST[con.CREATE_EVENT],
-            reply_markup=reply_markup
+        _send_text_and_keyboard(
+            update=update.message.reply_text,
+            keyboard=set_keyboard(context, con.CREATE_EVENT),
+            message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
         )
+        return con.CREATE_EVENT
     else:
-        keyboard = [
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(
-            text=(_validation_comment if _validation_comment else _validation_mime_comment),
-            reply_markup=reply_markup
+        _send_text_and_keyboard(
+            update=update.message.reply_text,
+            keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+            message_text=(_validation_comment if _validation_comment else _validation_mime_comment)
         )
         return con.CREATE_PHOTO
-    return con.CREATE_EVENT
 
 
 def show_edit_preview(update: Update, context: CallbackContext) -> int:
-    user_data = context.user_data
     query = update.callback_query
     query.answer()
+    user_data = context.user_data
     _validation_passed, _validation_comment = validate_user_data(con.PUBLISH_EVENT, userdata=context)
     if _validation_passed:
         keyboard = [
@@ -267,65 +233,40 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
         ]
     else:
-        keyboard = [
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-        ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+        keyboard = [[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]]
     _text = generate_text_event(user_data[con.EDIT_NAME], user_data[con.EDIT_CITY], user_data[con.EDIT_COUNTRY],
                                 user_data[con.EDIT_DATE_START], user_data[con.EDIT_DATE_END], user_data[con.EDIT_DESC])
-    if context.user_data[con.EDIT_PHOTO]:
-        logger.info('show_edit_preview - %s', context.user_data[con.EDIT_PHOTO])
+    if user_data[con.EDIT_PHOTO]:
         query.message.delete()
-        query.message.reply_photo(
-            photo=context.user_data[con.EDIT_PHOTO],
-            caption=_text,
-            reply_markup=reply_markup
-        )
-    else:
-        query.edit_message_text(
-            text=_text,
-            reply_markup=reply_markup
-        )
+    _send_text_and_keyboard(
+        update=query.message.reply_photo if user_data[con.EDIT_PHOTO] else query.edit_message_text,
+        keyboard=keyboard,
+        message_text=_text,
+        photo=user_data[con.EDIT_PHOTO] if user_data[con.EDIT_PHOTO] else None
+    )
     return con.CREATE_EVENT
 
 
 def publish_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    keyboard = [
-        [InlineKeyboardButton("Ок", callback_data=con.START_OVER)],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.delete()
-    query.message.reply_text(
-        text="\U0001F4F0 Событие опубликовано!",
-        reply_markup=reply_markup
+    _send_text_and_keyboard(
+        update=query.message.edit_reply_markup,
+        keyboard='',
+        message_text=None
+    )
+    _send_text_and_keyboard(
+        update=query.message.reply_text,
+        keyboard=[[InlineKeyboardButton("Ок", callback_data=con.START_OVER)]],
+        message_text="\U0001F4F0 Событие опубликовано!"
     )
     return con.CREATE_EVENT
 
 
 def show_event_calendar(update: Update, context: CallbackContext) -> int:
-    # month_events_data_0 = MonthEventsData('month_events_data_0')
-    # month_events_data_1 = MonthEventsData('month_events_data_1')
-    # month_events_data_2 = MonthEventsData('month_events_data_2')
-    # month_events_data_3 = MonthEventsData('month_events_data_3')
-    # month_events_data_4 = MonthEventsData('month_events_data_4')
-    #
-    # month_events_data_0.random()
-    # month_events_data_1.random()
-    # month_events_data_2.random()
-    # month_events_data_3.random()
-    # month_events_data_4.random()
-    #
-    # context.user_data['month_events_data_0'] = month_events_data_0
-    # context.user_data['month_events_data_1'] = month_events_data_1
-    # context.user_data['month_events_data_2'] = month_events_data_2
-    # context.user_data['month_events_data_3'] = month_events_data_3
-    # context.user_data['month_events_data_4'] = month_events_data_4
     query = update.callback_query
     query.answer()
     _text = context.user_data['FAKE_TEXT']
-    logger.info('show_event_calendar - %s', _text)
     if _text:
         query.delete_message()
         keyboard = set_keyboard(context, con.CALENDAR)
@@ -336,9 +277,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
             reply_markup=reply_markup
         )
     else:
-        keyboard = [
-            [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
-        ]
+        keyboard = [[InlineKeyboardButton("Ок", callback_data=con.GO_BACK)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.edit_text(
             text="Нет активных событий",
@@ -367,9 +306,7 @@ def delete_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     context.user_data['FAKE_TEXT'] = ''
-    keyboard = [
-        [InlineKeyboardButton("Ок", callback_data=con.GO_BACK)],
-    ]
+    keyboard = [[InlineKeyboardButton("Ок", callback_data=con.GO_BACK)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.message.edit_text(
         text="Событие удалено!",
@@ -388,6 +325,8 @@ def set_default_userdata(context: CallbackContext):
     context.user_data[con.EDIT_DATE_START + '_dt'] = None
     context.user_data[con.EDIT_DATE_END + '_dt'] = None
     context.user_data[con.EDIT_PHOTO] = ""
+    context.user_data[con.PROPERTY_TO_EDIT] = None
+    context.user_data[con.CALLBACK_QUERY] = None
 
 
 def set_keyboard(context: CallbackContext, stage: str):
@@ -504,15 +443,26 @@ def check_symbol(checked: bool):
         return "\U00002705"
     else:
         return "\U00002611"
-        # return "\U0000274C" - red cross
 
 
-def _send_text_and_keyboard(update, keyboard, message_text):
-    if isinstance(keyboard, str):
-        reply_markup = keyboard
+def _send_text_and_keyboard(update, keyboard, message_text, photo=None):
+    if message_text is None:
+        update(
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
     else:
-        reply_markup = InlineKeyboardMarkup(keyboard)
-    update(
-        text=message_text,
-        reply_markup=reply_markup
-    )
+        if isinstance(keyboard, str):
+            reply_markup = keyboard
+        else:
+            reply_markup = InlineKeyboardMarkup(keyboard)
+        if photo is None:
+            update(
+                text=message_text,
+                reply_markup=reply_markup
+            )
+        else:
+            update(
+                caption=message_text,
+                reply_markup=reply_markup,
+                photo=photo
+            )
