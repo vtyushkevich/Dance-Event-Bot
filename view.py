@@ -67,8 +67,8 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
-    message = update.callback_query.message
     update.callback_query.answer()
+    message = update.callback_query.message
     keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
     _kwargs = {
@@ -84,77 +84,74 @@ def creating_event(update: Update, context: CallbackContext) -> int:
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
-    update.callback_query.answer()
-    context.user_data[con.PROPERTY_TO_EDIT] = update.callback_query.data
-    keyboard = [
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-    ]
+    query = update.callback_query
+    query.answer()
+    context.user_data[con.PROPERTY_TO_EDIT] = query.data
+    keyboard = [[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.callback_query.edit_message_text(
-        text=con.TEXT_REQUEST[update.callback_query.data],
-        reply_markup=reply_markup
-    )
-    return con.CREATE_PROPERTY
+    _kwargs = {
+        'text': con.TEXT_REQUEST[update.callback_query.data],
+        'reply_markup': reply_markup
+    }
+    query.edit_message_text(**_kwargs)
+    return con.CREATE_PHOTO if query.data == con.EDIT_PHOTO else con.CREATE_PROPERTY
 
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
-    text = update.message.text
-    category = user_data['property_to_edit']
-    _validation_passed, _validation_comment = validate_user_data(category, text)
+    input_from_user = update.message.text
+    category = user_data[con.PROPERTY_TO_EDIT]
+    _validation_passed, _validation_comment = validate_user_data(category, input_from_user)
     if _validation_passed:
-        user_data[category] = text
-        del user_data['property_to_edit']
-        keyboard = set_keyboard(context, con.CREATE_EVENT)
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(
-            text=con.TEXT_REQUEST[con.CREATE_EVENT],
-            reply_markup=reply_markup
+        user_data[category] = input_from_user
+        del user_data[con.PROPERTY_TO_EDIT]
+
+        logger.info("set_property_value - %s", set_keyboard(context, con.CREATE_EVENT))
+
+        _send_text_and_keyboard(
+            update=update.message.reply_text,
+            keyboard=set_keyboard(context, con.CREATE_EVENT),
+            message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
         )
+        return con.CREATE_EVENT
     else:
-        keyboard = [
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(
-            text=_validation_comment,
-            reply_markup=reply_markup
+        _send_text_and_keyboard(
+            update=update.message.reply_text,
+            keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+            message_text=_validation_comment
         )
         return con.CREATE_PROPERTY
-    return con.CREATE_EVENT
 
 
 def get_date_to_edit(update: Update, context: CallbackContext) -> int:
-    text = update.callback_query.data
-    context.user_data['property_to_edit'] = text
-    logger.info("property_to_edit - %s", text)
-
     query = update.callback_query
     query.answer()
-    calendar, step = DetailedTelegramCalendar(calendar_id=1, additional_buttons=[
-        {"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}]).build()
-    query.edit_message_text(
-        text=con.TEXT_REQUEST[text],
-        reply_markup=calendar
+    context.user_data[con.PROPERTY_TO_EDIT] = query.data
+    calendar, step = DetailedTelegramCalendar(
+        calendar_id=1,
+        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],).build()
+    _send_text_and_keyboard(
+        update=query.edit_message_text,
+        keyboard=calendar,
+        message_text=con.TEXT_REQUEST[query.data]
     )
     return con.CREATE_DATE
 
 
-def cal(update: Update, context: CallbackContext):
-    _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
+def set_date_value(update: Update, context: CallbackContext):
     query = update.callback_query
-    logger.info('def cal - %s', update.callback_query.data)
     query.answer()
     result, key, step = DetailedTelegramCalendar().process(query.data)
     if not result and key:
-        query.edit_message_text(
-            text=f"Select {LSTEP[step]}",
-            reply_markup=key
+        _send_text_and_keyboard(
+            update=query.edit_message_text,
+            keyboard=key,
+            message_text=f"Select {LSTEP[step]}"
         )
         return con.CREATE_DATE
     elif result:
         user_data = context.user_data
-        category = user_data['property_to_edit']
+        category = user_data[con.PROPERTY_TO_EDIT]
         user_data[category + '_dt'] = result
         _validation_passed, _validation_comment = validate_user_data(category + '_dt', checked_date=result)
         if _validation_passed:
@@ -164,54 +161,47 @@ def cal(update: Update, context: CallbackContext):
                 checked_sec_date=user_data[con.EDIT_DATE_END + '_dt']
             )
         if _validation_passed:
+            _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
             user_data[category] = _datetype[category] + str(result)
-
-            logger.info('category - %s', category)
-            logger.info('set date - %s', result)
-
-            del user_data['property_to_edit']
-            keyboard = set_keyboard(context, con.CREATE_EVENT)
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.edit_message_text(
-                text=con.TEXT_REQUEST[con.CREATE_EVENT],
-                reply_markup=reply_markup
+            del user_data[con.PROPERTY_TO_EDIT]
+            _send_text_and_keyboard(
+                update=query.edit_message_text,
+                keyboard=set_keyboard(context, con.CREATE_EVENT),
+                message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
             )
+            return con.CREATE_EVENT
         else:
             user_data[category + '_dt'] = None
-            keyboard = [
-                [InlineKeyboardButton("\U00002B05 Назад", callback_data=category)],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.edit_message_text(
-                text=_validation_comment,
-                reply_markup=reply_markup
+            _send_text_and_keyboard(
+                update=query.edit_message_text,
+                keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=category)]],
+                message_text=_validation_comment
             )
             return con.CREATE_DATE
-        return con.CREATE_EVENT
 
 
-def get_photo_to_edit(update: Update, context: CallbackContext) -> int:
-    text = update.callback_query.data
-    context.user_data['property_to_edit'] = text
-    logger.info("property_to_edit - %s", text)
-
-    query = update.callback_query
-    query.answer()
-    keyboard = [
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text=con.TEXT_REQUEST[text],
-        reply_markup=reply_markup
-    )
-
-    return con.CREATE_PHOTO
+# def get_photo_to_edit(update: Update, context: CallbackContext) -> int:
+#     text = update.callback_query.data
+#     context.user_data[con.PROPERTY_TO_EDIT] = text
+#     logger.info("property_to_edit - %s", text)
+#
+#     query = update.callback_query
+#     query.answer()
+#     keyboard = [
+#         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+#     ]
+#     reply_markup = InlineKeyboardMarkup(keyboard)
+#     query.edit_message_text(
+#         text=con.TEXT_REQUEST[text],
+#         reply_markup=reply_markup
+#     )
+#
+#     return con.CREATE_PHOTO
 
 
 def set_photo(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
-    category = user_data['property_to_edit']
+    category = user_data[con.PROPERTY_TO_EDIT]
     photo_file = update.message.photo[-1]
     logger.info('set_photo____photo_file - %s', photo_file)
     logger.info('set_photo____photo_file.file_id - %s', photo_file.file_id)
@@ -219,7 +209,7 @@ def set_photo(update: Update, context: CallbackContext) -> int:
 
     logger.info('category - %s', category)
 
-    del user_data['property_to_edit']
+    del user_data[con.PROPERTY_TO_EDIT]
     keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
@@ -231,7 +221,7 @@ def set_photo(update: Update, context: CallbackContext) -> int:
 
 def set_doc(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
-    category = user_data['property_to_edit']
+    category = user_data[con.PROPERTY_TO_EDIT]
     doc_file = update.message.document
     logger.info('set_doc____doc_file - %s', doc_file)
     photo_file = doc_file.get_file()
@@ -241,7 +231,7 @@ def set_doc(update: Update, context: CallbackContext) -> int:
     _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
     if _validation_passed and _validation_mime_passed:
         user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
-        del user_data['property_to_edit']
+        del user_data[con.PROPERTY_TO_EDIT]
         keyboard = set_keyboard(context, con.CREATE_EVENT)
         reply_markup = InlineKeyboardMarkup(keyboard)
         _msg = update.message.reply_photo(
@@ -515,3 +505,14 @@ def check_symbol(checked: bool):
     else:
         return "\U00002611"
         # return "\U0000274C" - red cross
+
+
+def _send_text_and_keyboard(update, keyboard, message_text):
+    if isinstance(keyboard, str):
+        reply_markup = keyboard
+    else:
+        reply_markup = InlineKeyboardMarkup(keyboard)
+    update(
+        text=message_text,
+        reply_markup=reply_markup
+    )

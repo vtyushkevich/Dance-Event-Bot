@@ -16,8 +16,7 @@ from view import (
     get_property_to_edit,
     set_property_value,
     get_date_to_edit,
-    cal,
-    get_photo_to_edit,
+    set_date_value,
     set_photo,
     set_doc,
     show_edit_preview,
@@ -51,12 +50,9 @@ def main() -> None:
                     get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
                 ),
                 CallbackQueryHandler(
-                    get_photo_to_edit, pattern='^(' + con.EDIT_PHOTO + ')$'
-                ),
-                CallbackQueryHandler(
                     get_property_to_edit,
                     pattern='^(' + con.EDIT_NAME + '|' + con.EDIT_CITY + '|' +
-                            con.EDIT_DESC + '|' + con.EDIT_COUNTRY + ')$'
+                            con.EDIT_DESC + '|' + con.EDIT_COUNTRY + '|' + con.EDIT_PHOTO + ')$'
                 ),
                 CallbackQueryHandler(
                     show_edit_preview,
@@ -72,7 +68,7 @@ def main() -> None:
             con.CREATE_DATE: [
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
                 CallbackQueryHandler(
-                    cal, pattern='^' + 'cbcal.*' + '$'
+                    set_date_value, pattern='^' + 'cbcal.*' + '$'
                 ),
                 CallbackQueryHandler(
                     get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
