@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 def start(update: Update, context: CallbackContext) -> int:
     """Send a message on `/start`."""
-    user = update.message.from_user
-    logger.info("User %s started the conversation.", user.first_name)
+    logger.info("User %s started the conversation.", update.message.from_user.first_name)
     keyboard = set_keyboard(context, con.START)
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
@@ -29,17 +28,18 @@ def start(update: Update, context: CallbackContext) -> int:
         reply_markup=reply_markup
     )
     set_default_userdata(context)
-    _text = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022', event_city='Челябинск',
-                                event_country='Россия',
-                                event_desc='Душевное вятское гостеприимство, высокий уровень организации мероприятий, атмосфера уюта, '
-                                           'праздника, дружбы,любви и радости, комфорт для каждого участника - всё это ждет вас на любом нашем танго-мероприятии.'
-                                           'Шикарный зал 700 кв. метров в самом центре города, шикарный пол, звук и свет,'
-                                           ' любимые маэстрос, оркестры и танго-диджеи и многое другое мы готовим для участников осеннего фестиваля.'
-                                           'В программе: ПЯТЬ милонг, ТРИ оркестра.'
-                                           'Показательные выступления Себастьяна Арсе и Марии Мариновой.'
-                                           'Показательные выступления Михаила Надточего и Эльвиры Ламбо.',
-                                event_date_end='2022-10-30', event_date_start='2022-10-28')
-    context.user_data['FAKE_TEXT'] = _text
+    context.user_data['FAKE_TEXT'] = generate_text_event(event_name='FESTIVALITO LA VIDA, MÚSICA Y TANGO 2022',
+                                                         event_city='Челябинск',
+                                                         event_country='Россия',
+                                                         event_desc='Душевное вятское гостеприимство, высокий уровень организации мероприятий, атмосфера уюта, '
+                                                                    'праздника, дружбы,любви и радости, комфорт для каждого участника - всё это ждет вас на любом нашем танго-мероприятии.'
+                                                                    'Шикарный зал 700 кв. метров в самом центре города, шикарный пол, звук и свет,'
+                                                                    ' любимые маэстрос, оркестры и танго-диджеи и многое другое мы готовим для участников осеннего фестиваля.'
+                                                                    'В программе: ПЯТЬ милонг, ТРИ оркестра.'
+                                                                    'Показательные выступления Себастьяна Арсе и Марии Мариновой.'
+                                                                    'Показательные выступления Михаила Надточего и Эльвиры Ламбо.',
+                                                         event_date_end='2022-10-30',
+                                                         event_date_start='2022-10-28')
     return con.TOP_LEVEL
 
 
@@ -48,24 +48,18 @@ def start_over(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = set_keyboard(context, con.START)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    if context.user_data['FAKE_TEXT']:
+    _kwargs = {'text': "\U000026F3 Что делаем дальше?", 'reply_markup': reply_markup}
+    if query.message.caption:
         query.delete_message()
-        query.message.reply_text(
-            text="\U000026F3 Что делаем дальше?",
-            reply_markup=reply_markup
-        )
+        query.message.reply_text(**_kwargs)
     else:
-        query.edit_message_text(
-            text="\U000026F3 Что делаем дальше?",
-            reply_markup=reply_markup
-        )
+        query.edit_message_text(**_kwargs)
     set_default_userdata(context)
     return con.TOP_LEVEL
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
-    user = update.message.from_user
-    logger.info("User %s canceled the conversation.", user.first_name)
+    logger.info("User %s canceled the conversation.", update.message.from_user.first_name)
     update.message.reply_text(
         'До встречи!', reply_markup=ReplyKeyboardRemove()
     )
@@ -73,37 +67,31 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
+    message = update.callback_query.message
+    update.callback_query.answer()
     keyboard = set_keyboard(context, con.CREATE_EVENT)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    if query.message.caption:
-        query.message.delete()
-        query.message.reply_text(
-            text=con.TEXT_REQUEST[con.CREATE_EVENT],
-            reply_markup=reply_markup
-        )
+    _kwargs = {
+        'text': con.TEXT_REQUEST[con.CREATE_EVENT],
+        'reply_markup': reply_markup
+    }
+    if message.caption:
+        message.delete()
+        message.reply_text(**_kwargs)
     else:
-        query.message.edit_text(
-            text=con.TEXT_REQUEST[con.CREATE_EVENT],
-            reply_markup=reply_markup
-        )
+        message.edit_text(**_kwargs)
     return con.CREATE_EVENT
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
-    text = update.callback_query.data
-    context.user_data['property_to_edit'] = text
-    logger.info("property_to_edit - %s", text)
-
-    query = update.callback_query
-    query.answer()
+    update.callback_query.answer()
+    context.user_data[con.PROPERTY_TO_EDIT] = update.callback_query.data
     keyboard = [
         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text(
-        text=con.TEXT_REQUEST[text],
+    update.callback_query.edit_message_text(
+        text=con.TEXT_REQUEST[update.callback_query.data],
         reply_markup=reply_markup
     )
     return con.CREATE_PROPERTY
@@ -116,12 +104,6 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
     _validation_passed, _validation_comment = validate_user_data(category, text)
     if _validation_passed:
         user_data[category] = text
-
-        logger.info('category - %s', category)
-        logger.info('set property - %s', text)
-        # bot = Bot(BOT_TOKEN)
-        # bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
-
         del user_data['property_to_edit']
         keyboard = set_keyboard(context, con.CREATE_EVENT)
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -450,11 +432,6 @@ def set_keyboard(context: CallbackContext, stage: str):
         keyboard = [
             [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-            # [InlineKeyboardButton(str(context.user_data['month_events_data_0'].month) + ' ' + str(context.user_data['month_events_data_0'].year), callback_data=context.user_data['month_events_data_0'].callback)],
-            # [InlineKeyboardButton(str(context.user_data['month_events_data_1'].month) + ' ' + str(context.user_data['month_events_data_1'].year), callback_data=context.user_data['month_events_data_1'].callback)],
-            # [InlineKeyboardButton(str(context.user_data['month_events_data_2'].month) + ' ' + str(context.user_data['month_events_data_2'].year), callback_data=context.user_data['month_events_data_2'].callback)],
-            # [InlineKeyboardButton(str(context.user_data['month_events_data_3'].month) + ' ' + str(context.user_data['month_events_data_3'].year), callback_data=context.user_data['month_events_data_3'].callback)],
-            # [InlineKeyboardButton(str(context.user_data['month_events_data_4'].month) + ' ' + str(context.user_data['month_events_data_4'].year), callback_data=context.user_data['month_events_data_4'].callback)],
         ]
     return keyboard
 
@@ -512,7 +489,7 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
         if not validation_passed:
             validation_comment = '\U0001F6AB Дата события не должна быть в прошлом времени'
             return validation_passed, validation_comment
-    if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt')\
+    if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt') \
             and checked_date is not None and checked_sec_date is not None:
         _delta: timedelta = (checked_sec_date - checked_date)
         validation_passed = _delta.total_seconds() > 0
