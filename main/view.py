@@ -59,3 +59,4 @@ def cancel(update: Update, context: CallbackContext) -> int:
         message_text='До встречи!',
     )
     return ConversationHandler.END
+
