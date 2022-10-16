@@ -7,12 +7,13 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-
 from config import BOT_TOKEN
-from view import (
+from main.view import (
     start,
     start_over,
     cancel,
+)
+from view import (
     creating_event,
     get_property_to_edit,
     set_property_value,

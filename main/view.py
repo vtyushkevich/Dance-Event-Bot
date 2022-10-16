@@ -1,3 +1,17 @@
+import logging
+
+from telegram import Update
+from telegram.ext import CallbackContext, ConversationHandler
+
+import const as con
+from view import _send_text_and_keyboard, set_keyboard, generate_text_event, set_default_userdata
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+
 def start(update: Update, context: CallbackContext) -> int:
     """Send a message on `/start`."""
     logger.info("User %s started the conversation.", update.message.from_user.first_name)
