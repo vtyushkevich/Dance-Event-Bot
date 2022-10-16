@@ -7,26 +7,30 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
+
+from almanac.view import show_event_calendar, delete_event_confirm, delete_event
 from config import BOT_TOKEN
+from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
+    set_date_value, set_property_value, set_photo, set_doc
 from main.view import (
     start,
     start_over,
     cancel,
 )
-from view import (
-    creating_event,
-    get_property_to_edit,
-    set_property_value,
-    get_date_to_edit,
-    set_date_value,
-    set_photo,
-    set_doc,
-    show_edit_preview,
-    publish_event,
-    show_event_calendar,
-    delete_event,
-    delete_event_confirm,
-)
+# from view import (
+#     creating_event,
+#     get_property_to_edit,
+#     set_property_value,
+#     get_date_to_edit,
+#     set_date_value,
+#     set_photo,
+#     set_doc,
+#     show_edit_preview,
+#     publish_event,
+#     show_event_calendar,
+#     delete_event,
+#     delete_event_confirm,
+# )
 import const as con
 
 logging.basicConfig(
