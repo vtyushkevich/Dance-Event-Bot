@@ -8,7 +8,7 @@ from telegram.ext import (
     Filters,
 )
 
-from almanac.view import show_event_calendar, delete_event_confirm, delete_event
+from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_1, show_select_2
 from config import BOT_TOKEN
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
     set_date_value, set_property_value, set_photo, set_doc
@@ -50,6 +50,8 @@ def main() -> None:
             con.TOP_LEVEL: [
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
+                CallbackQueryHandler(show_select_1, pattern='^' + 'select1' + '$'),
+                CallbackQueryHandler(show_select_2, pattern='^' + 'select2' + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(
@@ -102,6 +104,7 @@ def main() -> None:
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_EVENT_OK + '$'),
+                CallbackQueryHandler(show_select_2, pattern='^' + con.SELECT_ALM + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
             ]
         },
