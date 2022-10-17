@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from telegram import Update, InlineKeyboardButton
@@ -8,6 +9,7 @@ from core.view import send_text_and_keyboard, set_keyboard, generate_text_event
 
 import const as con
 from events.validators import validate_user_data
+from view import logger
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
@@ -38,7 +40,7 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
     _cb = context.user_data[con.CALLBACK_QUERY]
-    _cb.message.delete()
+    _cb.message.delete() if _cb is not None else None
     user_data = context.user_data
     input_from_user = update.message.text
     category = user_data[con.PROPERTY_TO_EDIT]
@@ -53,6 +55,7 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
         )
         return con.CREATE_EVENT
     else:
+        context.user_data[con.CALLBACK_QUERY] = None
         send_text_and_keyboard(
             update=update.message.reply_text,
             keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
@@ -67,7 +70,9 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
     context.user_data[con.PROPERTY_TO_EDIT] = query.data
     calendar, step = DetailedTelegramCalendar(
         calendar_id=1,
-        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}], ).build()
+        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],
+        locale='ru',
+    ).build()
     send_text_and_keyboard(
         update=query.edit_message_text,
         keyboard=calendar,
@@ -79,12 +84,17 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
 def set_date_value(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
-    result, key, step = DetailedTelegramCalendar().process(query.data)
+    result, key, step = DetailedTelegramCalendar(
+        calendar_id=1,
+        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],
+        locale='ru',
+    ).process(query.data)
     if not result and key:
         send_text_and_keyboard(
             update=query.edit_message_text,
             keyboard=key,
-            message_text=f"Select {LSTEP[step]}"
+            # message_text=f"Выберите {con.RU_LSTEP[step]}"
+            message_text=con.TEXT_REQUEST[context.user_data[con.PROPERTY_TO_EDIT]],
         )
         return con.CREATE_DATE
     elif result:
@@ -120,7 +130,7 @@ def set_date_value(update: Update, context: CallbackContext):
 
 def set_photo(update: Update, context: CallbackContext) -> int:
     _cb = context.user_data[con.CALLBACK_QUERY]
-    _cb.message.delete()
+    _cb.message.delete() if _cb is not None else None
     user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     photo_file = update.message.photo[-1]
@@ -136,34 +146,36 @@ def set_photo(update: Update, context: CallbackContext) -> int:
 
 def set_doc(update: Update, context: CallbackContext) -> int:
     _cb = context.user_data[con.CALLBACK_QUERY]
-    _cb.message.delete()
+    _cb.message.delete() if _cb is not None else None
     user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     doc_file = update.message.document
-    photo_file = doc_file.get_file()
-    photo_file.download(custom_path='./banners/' + photo_file.file_unique_id)
-    _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
+    _validation_passed, _validation_comment = None, None
     _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
-    if _validation_passed and _validation_mime_passed:
-        user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
-        del user_data[con.PROPERTY_TO_EDIT]
-        _msg = update.message.reply_photo(
-            photo=open(user_data[category], 'rb'),
-        )
-        user_data[category] = _msg.photo[-1]
-        send_text_and_keyboard(
-            update=update.message.reply_text,
-            keyboard=set_keyboard(context, con.CREATE_EVENT),
-            message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
-        )
-        return con.CREATE_EVENT
-    else:
-        send_text_and_keyboard(
-            update=update.message.reply_text,
-            keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
-            message_text=(_validation_comment if _validation_comment else _validation_mime_comment)
-        )
-        return con.CREATE_PHOTO
+    if _validation_mime_passed:
+        photo_file = doc_file.get_file()
+        photo_file.download(custom_path='./banners/' + photo_file.file_unique_id)
+        _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
+        if _validation_passed:
+            user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
+            del user_data[con.PROPERTY_TO_EDIT]
+            _msg = update.message.reply_photo(
+                photo=open(user_data[category], 'rb'),
+            )
+            user_data[category] = _msg.photo[-1]
+            send_text_and_keyboard(
+                update=update.message.reply_text,
+                keyboard=set_keyboard(context, con.CREATE_EVENT),
+                message_text=con.TEXT_REQUEST[con.CREATE_EVENT]
+            )
+            return con.CREATE_EVENT
+    context.user_data[con.CALLBACK_QUERY] = None
+    send_text_and_keyboard(
+        update=update.message.reply_text,
+        keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+        message_text=(_validation_comment if _validation_comment else _validation_mime_comment)
+    )
+    return con.CREATE_PHOTO
 
 
 def show_edit_preview(update: Update, context: CallbackContext) -> int:
