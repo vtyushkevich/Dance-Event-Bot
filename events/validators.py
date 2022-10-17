@@ -25,7 +25,7 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
                 validation_comment = '\U0001F6AB Картинка не должна весить более 10 Мб'
                 return validation_passed, validation_comment
         if mimetype:
-            validation_passed = mimetype == 'image/gif' or mimetype == 'image/jpeg' or mimetype == 'image/png'
+            validation_passed = mimetype == 'image/gif' or mimetype == 'image/jpeg' or mimetype == 'image/png' or mimetype == 'video/mp4'
             if not validation_passed:
                 validation_comment = '\U0001F6AB Некорректный формат файла'
                 return validation_passed, validation_comment
