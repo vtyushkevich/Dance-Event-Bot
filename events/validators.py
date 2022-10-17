@@ -13,7 +13,7 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
             return validation_passed, validation_comment
     if category == con.EDIT_DESC:
         _name_len = 1000
-        validation_passed = len(userdata) < _name_len
+        validation_passed = len(userdata) <= _name_len
         if not validation_passed:
             validation_comment = '\U0001F6AB Описание не должно быть длиннее ' + str(_name_len) + ' символов'
             return validation_passed, validation_comment
@@ -38,7 +38,7 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
     if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt') \
             and checked_date is not None and checked_sec_date is not None:
         _delta: timedelta = (checked_sec_date - checked_date)
-        validation_passed = _delta.total_seconds() > 0
+        validation_passed = _delta.total_seconds() >= 0
         if not validation_passed:
             validation_comment = '\U0001F6AB Дата окончания события не должна быть раньше начала события'
             return validation_passed, validation_comment
