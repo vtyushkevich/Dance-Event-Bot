@@ -93,7 +93,6 @@ def set_date_value(update: Update, context: CallbackContext):
         send_text_and_keyboard(
             update=query.edit_message_text,
             keyboard=key,
-            # message_text=f"Выберите {con.RU_LSTEP[step]}"
             message_text=con.TEXT_REQUEST[context.user_data[con.PROPERTY_TO_EDIT]],
         )
         return con.CREATE_DATE
@@ -110,7 +109,7 @@ def set_date_value(update: Update, context: CallbackContext):
             )
         if _validation_passed:
             _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
-            user_data[category] = _datetype[category] + str(result)
+            user_data[category] = _datetype[category] + str(result.day) + ' ' + con.RU_MONTH.get(result.month) + ' ' + str(result.year) + ' г.'
             del user_data[con.PROPERTY_TO_EDIT]
             send_text_and_keyboard(
                 update=query.edit_message_text,
