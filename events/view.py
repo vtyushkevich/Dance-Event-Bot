@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from telegram import Update, InlineKeyboardButton
@@ -9,7 +8,6 @@ from core.view import send_text_and_keyboard, set_keyboard, generate_text_event
 
 import const as con
 from events.validators import validate_user_data
-from view import logger
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
@@ -153,10 +151,10 @@ def set_doc(update: Update, context: CallbackContext) -> int:
     _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
     if _validation_mime_passed:
         photo_file = doc_file.get_file()
-        photo_file.download(custom_path='./banners/' + photo_file.file_unique_id)
+        photo_file.download(custom_path='./_banners/' + photo_file.file_unique_id)
         _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
         if _validation_passed:
-            user_data[category] = Path.cwd() / 'banners' / photo_file.file_unique_id
+            user_data[category] = Path.cwd() / '_banners' / photo_file.file_unique_id
             del user_data[con.PROPERTY_TO_EDIT]
             _msg = update.message.reply_photo(
                 photo=open(user_data[category], 'rb'),
