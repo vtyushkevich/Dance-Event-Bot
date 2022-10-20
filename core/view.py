@@ -27,7 +27,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
             [InlineKeyboardButton("Посмотреть архив", callback_data=con.ARCHIVE)],
             # [InlineKeyboardButton("Выбор даты в календаре №1", callback_data='select1')],
-            # [InlineKeyboardButton("Выбор даты в календаре №2", callback_data='select2')],
+            [InlineKeyboardButton("Пересоздать базу данных", callback_data='select2')],
         ]
     if stage == con.CREATE_EVENT:
         keyboard = [
@@ -105,3 +105,7 @@ def send_text_and_keyboard(update, keyboard, message_text, photo=None):
                 reply_markup=reply_markup,
                 photo=photo
             )
+
+
+def generate_fake_event_date():
+    pass

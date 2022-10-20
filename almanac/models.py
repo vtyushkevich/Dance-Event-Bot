@@ -1,14 +1,18 @@
-import random
-
-
-class MonthEventsData:
-    def __init__(self, callback):
-        self.month = None
-        self.year = None
-        self.number_events = 0
-        self.callback = callback
-
-    def random(self):
-        self.month = random.randint(1, 12)
-        self.year = random.randint(2023, 2024)
-        self.number_events = random.randint(0, 5)
+# from sqlalchemy import Column, String
+# from sqlalchemy.orm import relationship
+#
+# from core.mixins import TimestampMixin
+# from core.models import Base
+#
+#
+# class User(TimestampMixin, Base):
+#     first_name = Column(String(200), unique=False, nullable=False)
+#     second_name = Column(String(200), unique=False, nullable=False)
+#     nickname = Column(String(200), unique=False, nullable=False)
+#
+#     author = relationship('User', back_populates='users', uselist=False)
+#
+#     def __str__(self):
+#         return f'{self.__class__.__name__}(' \
+#                f'id={self.id} ' \
+#                f'title={self.nickname} )'
