@@ -44,6 +44,7 @@ class Event(TimestampMixin, Base):
     event_date_start = Column(Date, unique=False, nullable=False)
     event_date_end = Column(Date, unique=False, nullable=False)
     event_desc = Column(String(1024), unique=False, nullable=False)
+    event_photo = Column(String(1024), unique=False, nullable=True)
 
     created_by = Column(Integer, ForeignKey('users.id'), nullable=False)
     user = relationship('User', back_populates='events', uselist=True)

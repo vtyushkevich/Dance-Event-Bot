@@ -1,3 +1,6 @@
+import collections
+import datetime
+
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 from telegram_bot_calendar import DetailedTelegramCalendar
@@ -5,29 +8,36 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 import const as con
 # from core.models import Base, Session
 from core.view import set_keyboard, send_text_and_keyboard
-from main_models import Base, Session
+from main_models import Base, Session, Event
 
 
 def show_event_calendar(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    _text = context.user_data['FAKE_TEXT']
-    if _text:
-        query.delete_message()
-        keyboard = set_keyboard(context, con.CALENDAR)
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.reply_photo(
-            photo='AgACAgIAAxkBAAIC8mNEWei1pJxkp_kZXTGbHNV6tF1ZAALfwzEbsOsgSjmF2xeA2UOiAQADAgADbQADKgQ',
-            caption=_text,
-            reply_markup=reply_markup
+
+    session = Session()
+    future_events = session.query(Event).filter(Event.event_date_start >= datetime.date.today()).order_by(Event.event_date_start)
+    session.commit()
+    date_string = []
+    for event in future_events:
+        date_string.append(event.event_date_start.replace(day=1))
+
+    counter = collections.Counter(date_string)
+    counter_1 = collections.OrderedDict()
+    for sortedKey in sorted(counter):
+        print(sortedKey, counter[sortedKey])
+        counter_1[sortedKey] = counter[sortedKey]
+
+    keyboard_list = []
+    for event in counter_1:
+        keyboard_list.append(
+            [InlineKeyboardButton(str(event), callback_data=con.CALENDAR)]
         )
-    else:
-        keyboard = [[InlineKeyboardButton("Ок", callback_data=con.GO_BACK)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.edit_text(
-            text="Нет активных событий",
-            reply_markup=reply_markup
-        )
+    reply_markup = InlineKeyboardMarkup(keyboard_list)
+    query.message.edit_text(
+        text="Выберите дату",
+        reply_markup=reply_markup
+    )
     return con.CALENDAR
 
 
@@ -65,7 +75,8 @@ def show_select_1(update: Update, context: CallbackContext) -> int:
     query.answer()
     keyboard = list()
     for n in range(10):
-        keyboard.append([InlineKeyboardButton("Сентябрь '22 " + str(n), callback_data=con.SELECT_ALM + '_' + str(2022*100+9))])
+        keyboard.append(
+            [InlineKeyboardButton("Сентябрь '22 " + str(n), callback_data=con.SELECT_ALM + '_' + str(2022 * 100 + 9))])
     send_text_and_keyboard(
         update=query.message.edit_text,
         keyboard=keyboard,
@@ -78,7 +89,8 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
 
-    print(Base.metadata)
+    # print(Base.metadata)
+    Base.metadata.drop_all()
     Base.metadata.create_all()
     session = Session()
 
@@ -94,7 +106,6 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
     #     message_text=query.data
     # )
     return con.TOP_LEVEL
-
 
 # date_string = []
 # for _date in sorted(date_list):

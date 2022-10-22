@@ -225,6 +225,7 @@ def publish_event(update: Update, context: CallbackContext) -> int:
         event_desc=user_data[con.EDIT_DESC],
         event_date_start=user_data[con.EDIT_DATE_START + '_dt'],
         event_date_end=user_data[con.EDIT_DATE_END + '_dt'],
+        event_photo=user_data[con.EDIT_PHOTO],
         created_by=1,
         created_at=datetime.datetime.today()
     )
