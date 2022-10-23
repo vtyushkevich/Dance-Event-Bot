@@ -1,22 +1,38 @@
+from datetime import datetime, date
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
 import const as con
 
 
-def set_default_userdata(context: CallbackContext):
-    context.user_data[con.EDIT_NAME] = "Название события"
-    context.user_data[con.EDIT_CITY] = "Город"
-    context.user_data[con.EDIT_COUNTRY] = "Страна"
-    context.user_data[con.EDIT_DESC] = ""
-    context.user_data[con.EDIT_DATE_START] = "Дата начала"
-    context.user_data[con.EDIT_DATE_END] = "Дата окончания"
-    context.user_data[con.EDIT_DATE_START + '_dt'] = None
-    context.user_data[con.EDIT_DATE_END + '_dt'] = None
-    context.user_data[con.EDIT_PHOTO] = ""
-    context.user_data[con.PROPERTY_TO_EDIT] = None
-    context.user_data[con.CALLBACK_QUERY] = None
-    context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
+def set_default_userdata(context: CallbackContext, event_data=None):
+    if event_data is None:
+        context.user_data[con.EDIT_NAME] = "Название события"
+        context.user_data[con.EDIT_CITY] = "Город"
+        context.user_data[con.EDIT_COUNTRY] = "Страна"
+        context.user_data[con.EDIT_DESC] = ""
+        context.user_data[con.EDIT_DATE_START] = "Дата начала"
+        context.user_data[con.EDIT_DATE_END] = "Дата окончания"
+        context.user_data[con.EDIT_DATE_START + '_dt'] = None
+        context.user_data[con.EDIT_DATE_END + '_dt'] = None
+        context.user_data[con.EDIT_PHOTO] = ""
+        context.user_data[con.PROPERTY_TO_EDIT] = None
+        context.user_data[con.CALLBACK_QUERY] = None
+        context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
+        context.user_data[con.CURRENT_EVENT_ID] = None
+    else:
+        context.user_data[con.EDIT_NAME] = event_data.event_name
+        context.user_data[con.EDIT_CITY] = event_data.event_city
+        context.user_data[con.EDIT_COUNTRY] = event_data.event_country
+        context.user_data[con.EDIT_DESC] = event_data.event_desc
+        context.user_data[con.EDIT_DATE_START] = "Дата начала " + str(event_data.event_date_start.day) + ' ' + con.RU_MONTH.get(
+                event_data.event_date_start.month) + ' ' + str(event_data.event_date_start.year) + ' г.'
+        context.user_data[con.EDIT_DATE_END] = "Дата окончания " + str(event_data.event_date_end.day) + ' ' + con.RU_MONTH.get(
+                event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.'
+        context.user_data[con.EDIT_DATE_START + '_dt'] = date(event_data.event_date_start.year, event_data.event_date_start.month, event_data.event_date_start.day)
+        context.user_data[con.EDIT_DATE_END + '_dt'] = date(event_data.event_date_end.year, event_data.event_date_end.month, event_data.event_date_end.day)
+        context.user_data[con.EDIT_PHOTO] = event_data.event_photo
 
 
 def set_keyboard(context: CallbackContext, stage: str):

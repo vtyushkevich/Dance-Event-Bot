@@ -1,12 +1,13 @@
 import datetime
 import re
 
-from sqlalchemy import or_, and_
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from sqlalchemy import and_
+from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
-from core.view import set_keyboard, send_text_and_keyboard, generate_text_event
+from core.view import set_keyboard, send_text_and_keyboard, generate_text_event, set_default_userdata
+from events.view import creating_event
 from main_models import Base, Session, Event
 
 
@@ -63,6 +64,7 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     user_data = context.user_data
+    user_data[con.CURRENT_EVENT_ID] = None
     keyboard_list = []
     event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
     id_list = user_data['date_counter'].get(datetime.date(event_date_int // 100, event_date_int - (event_date_int // 100)*100, 1))[1]
@@ -100,12 +102,15 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 def show_selected_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    user_data = context.user_data
 
-    event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    user_data[con.CURRENT_EVENT_ID] = int(re.search(pattern='\d+', string=query.data).group())
+    event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
     keyboard = [
+        [InlineKeyboardButton("\U0000270D Редактировать событие", callback_data=con.MANAGEMENT + '_' + str(event_id_int))],
         [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT + '_' + str(event_id_int))],
         [InlineKeyboardButton("\U00002B05 К событиям месяца",
                               callback_data=con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month))],
@@ -134,8 +139,11 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
 def delete_event_confirm(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    user_data = context.user_data
+
     query.delete_message()
-    event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    event_id_int = user_data[con.CURRENT_EVENT_ID]
     keyboard = [
         [InlineKeyboardButton("Удалить", callback_data=con.DELETE_CONFIRMED + '_' + str(event_id_int))],
         [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id_int))],
@@ -151,8 +159,10 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
 def delete_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    user_data = context.user_data
 
-    event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
@@ -166,6 +176,22 @@ def delete_event(update: Update, context: CallbackContext) -> int:
         message_text="Событие удалено!",
     )
     return con.CALENDAR
+
+
+def edit_event(update: Update, context: CallbackContext) -> int:
+    query = update.callback_query
+    query.answer()
+    user_data = context.user_data
+
+    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    event_id_int = user_data[con.CURRENT_EVENT_ID]
+    session = Session()
+    event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
+    session.commit()
+    if event_data:
+        set_default_userdata(context, event_data)
+    creating_event(update, context)
+    return con.CREATE_EVENT
 
 
 def show_select_2(update: Update, context: CallbackContext) -> int:

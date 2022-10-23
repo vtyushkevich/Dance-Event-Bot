@@ -1,9 +1,11 @@
 import datetime
+import re
 from pathlib import Path
 
+from sqlalchemy.dialects.sqlite import DATE
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
-from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from telegram_bot_calendar import DetailedTelegramCalendar
 
 from core.view import send_text_and_keyboard, set_keyboard, generate_text_event
 
@@ -207,6 +209,32 @@ def publish_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     user_data = context.user_data
+    session = Session()
+    if user_data[con.CURRENT_EVENT_ID] is None:
+        event = Event(
+            event_name=user_data[con.EDIT_NAME],
+            event_city=user_data[con.EDIT_CITY],
+            event_country=user_data[con.EDIT_COUNTRY],
+            event_desc=user_data[con.EDIT_DESC],
+            event_date_start=user_data[con.EDIT_DATE_START + '_dt'],
+            event_date_end=user_data[con.EDIT_DATE_END + '_dt'],
+            event_photo=user_data[con.EDIT_PHOTO],
+            created_by=1,
+            created_at=datetime.datetime.today()
+        )
+        session.add(event)
+    else:
+        event_id_int = user_data[con.CURRENT_EVENT_ID]
+        event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
+        if event_data:
+            event_data.event_name = user_data[con.EDIT_NAME],
+            event_data.event_city = user_data[con.EDIT_CITY],
+            event_data.event_country = user_data[con.EDIT_COUNTRY],
+            event_data.event_desc = user_data[con.EDIT_DESC],
+            event_data.event_date_start = DATE(user_data[con.EDIT_DATE_START + '_dt']),
+            event_data.event_date_end = DATE(user_data[con.EDIT_DATE_START + '_dt']),
+            event_data.event_photo = user_data[con.EDIT_PHOTO],
+    session.commit()
     send_text_and_keyboard(
         update=query.message.edit_reply_markup,
         keyboard='',
@@ -217,19 +245,4 @@ def publish_event(update: Update, context: CallbackContext) -> int:
         keyboard=[[InlineKeyboardButton("Ок", callback_data=con.START_OVER)]],
         message_text="\U0001F4F0 Событие опубликовано!"
     )
-
-    event = Event(
-        event_name=user_data[con.EDIT_NAME],
-        event_city=user_data[con.EDIT_CITY],
-        event_country=user_data[con.EDIT_COUNTRY],
-        event_desc=user_data[con.EDIT_DESC],
-        event_date_start=user_data[con.EDIT_DATE_START + '_dt'],
-        event_date_end=user_data[con.EDIT_DATE_END + '_dt'],
-        event_photo=user_data[con.EDIT_PHOTO],
-        created_by=1,
-        created_at=datetime.datetime.today()
-    )
-    session = Session()
-    session.add(event)
-    session.commit()
     return con.CREATE_EVENT
