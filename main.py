@@ -94,8 +94,9 @@ def main() -> None:
                 CallbackQueryHandler(update_page_of_month, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
                 CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '|' + con.GO_BACK + '<<' + '$'),
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
+                CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '.*$'),
+                CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
-                # CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '<$'),
             ]
         },
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],

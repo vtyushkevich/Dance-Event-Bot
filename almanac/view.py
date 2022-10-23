@@ -1,6 +1,7 @@
 import datetime
 import re
 
+from sqlalchemy import or_, and_
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
@@ -15,7 +16,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
 
     session = Session()
-    future_events = session.query(Event).filter(Event.event_date_start >= datetime.date.today()).order_by(
+    future_events = session.query(Event).filter(and_(Event.event_date_start >= datetime.date.today(), Event.deleted == False)).order_by(
         Event.event_date_start)
     session.commit()
     date_floor_list = []
@@ -105,6 +106,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
     keyboard = [
+        [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT + '_' + str(event_id_int))],
         [InlineKeyboardButton("\U00002B05 К событиям месяца",
                               callback_data=con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month))],
         [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)],
@@ -133,14 +135,15 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     query.delete_message()
+    event_id_int = int(re.search(pattern='\d+', string=query.data).group())
     keyboard = [
-        [InlineKeyboardButton("Удалить", callback_data=con.DELETE_EVENT_OK)],
-        [InlineKeyboardButton("Назад", callback_data=con.CALENDAR)],
+        [InlineKeyboardButton("Удалить", callback_data=con.DELETE_CONFIRMED + '_' + str(event_id_int))],
+        [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id_int))],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.reply_text(
-        text="Вы уверены, что хотите удалить событие?",
-        reply_markup=reply_markup
+    send_text_and_keyboard(
+        update=query.message.reply_text,
+        keyboard=keyboard,
+        message_text="Вы уверены, что хотите удалить событие?",
     )
     return con.CALENDAR
 
@@ -148,12 +151,19 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
 def delete_event(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    context.user_data['FAKE_TEXT'] = ''
+
+    event_id_int = int(re.search(pattern='\d+', string=query.data).group())
+    session = Session()
+    event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
+    session.commit()
+    if event_data:
+        event_data.deleted = True
+        session.commit()
     keyboard = [[InlineKeyboardButton("Ок", callback_data=con.GO_BACK)]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    query.message.edit_text(
-        text="Событие удалено!",
-        reply_markup=reply_markup
+    send_text_and_keyboard(
+        update=query.message.edit_text,
+        keyboard=keyboard,
+        message_text="Событие удалено!",
     )
     return con.CALENDAR
 
