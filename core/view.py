@@ -62,7 +62,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             button_list = []
         keyboard = [
             button_list,
-            [InlineKeyboardButton("\U00002B05 В основное меню", callback_data=con.GO_BACK)]
+            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)]
         ]
     return keyboard
 

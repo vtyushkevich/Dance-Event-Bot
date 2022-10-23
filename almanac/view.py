@@ -76,7 +76,10 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
                                   (event.event_name, event.event_city, event.event_country),
                                   callback_data=con.SELECT_EVENT + '_' + str(event.id))]
         )
-    keyboard_nav = [[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK + '<')]]
+    keyboard_nav = [
+        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK + '<')],
+        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)]
+    ]
     if query.message.caption:
         query.delete_message()
         send_text_and_keyboard(
@@ -104,7 +107,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     keyboard = [
         [InlineKeyboardButton("\U00002B05 К событиям месяца",
                               callback_data=con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month))],
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)],
     ]
     if event_data:
         _text = generate_text_event(
@@ -118,7 +121,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
         if event_data.event_photo:
             query.message.delete()
         send_text_and_keyboard(
-            update=query.message.reply_photo if event_data.event_photo is not None else query.edit_message_text,
+            update=query.message.reply_photo if event_data.event_photo != '' else query.edit_message_text,
             keyboard=keyboard,
             message_text=_text,
             photo=event_data.event_photo if event_data.event_photo != '' else None

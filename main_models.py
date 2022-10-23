@@ -5,7 +5,7 @@ import config
 from sqlalchemy import (
     create_engine,
     Column,
-    Integer, String, Date, ForeignKey, DateTime,
+    Integer, String, Date, ForeignKey, DateTime, Boolean,
 )
 
 from sqlalchemy.orm import (
@@ -45,6 +45,7 @@ class Event(TimestampMixin, Base):
     event_date_end = Column(Date, unique=False, nullable=False)
     event_desc = Column(String(1024), unique=False, nullable=False)
     event_photo = Column(String(1024), unique=False, nullable=False)
+    deleted = Column(Boolean, unique=False, nullable=False, default=False)
 
     created_by = Column(Integer, ForeignKey('users.id'), nullable=False)
     user = relationship('User', back_populates='events', uselist=True)
@@ -59,6 +60,8 @@ class User(TimestampMixin, Base):
     first_name = Column(String(200), unique=False, nullable=False)
     second_name = Column(String(200), unique=False, nullable=False)
     nickname = Column(String(200), unique=False, nullable=False)
+    access_level = Column(Integer, unique=False, nullable=False, default=1)
+    deleted = Column(Boolean, unique=False, nullable=False, default=False)
 
     events = relationship('Event', back_populates='user', uselist=False)
 
