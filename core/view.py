@@ -16,6 +16,7 @@ def set_default_userdata(context: CallbackContext):
     context.user_data[con.EDIT_PHOTO] = ""
     context.user_data[con.PROPERTY_TO_EDIT] = None
     context.user_data[con.CALLBACK_QUERY] = None
+    context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
 
 
 def set_keyboard(context: CallbackContext, stage: str):
@@ -26,8 +27,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)],
             [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
             [InlineKeyboardButton("Посмотреть архив", callback_data=con.ARCHIVE)],
-            # [InlineKeyboardButton("Выбор даты в календаре №1", callback_data='select1')],
-            [InlineKeyboardButton("Пересоздать базу данных", callback_data='select2')],
+            [InlineKeyboardButton("Пересоздать базу данных", callback_data=con.DELETE_EVENT)],
         ]
     if stage == con.CREATE_EVENT:
         keyboard = [
@@ -52,6 +52,17 @@ def set_keyboard(context: CallbackContext, stage: str):
         keyboard = [
             [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+        ]
+    if stage == con.SELECT_ALM:
+        if user_data['page_event_pointer'][0] - con.NUM_EVENTS_ON_PAGE >= 0:
+            button_list = [InlineKeyboardButton("\U000023EA назад", callback_data=con.BACK_LIST)]
+        elif user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE <= len(user_data['date_counter']):
+            button_list = [InlineKeyboardButton("\U000023E9 вперед", callback_data=con.FORWARD_LIST)]
+        else:
+            button_list = []
+        keyboard = [
+            button_list,
+            [InlineKeyboardButton("\U00002B05 В основное меню", callback_data=con.GO_BACK)]
         ]
     return keyboard
 

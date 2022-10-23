@@ -8,7 +8,8 @@ from telegram.ext import (
     Filters,
 )
 
-from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_1, show_select_2
+from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_2, \
+    browse_event_calendar, show_events_of_month, update_page_of_month, show_selected_event
 from config import BOT_TOKEN
 # from core.models import Base
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
@@ -39,8 +40,7 @@ def main() -> None:
             con.TOP_LEVEL: [
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
-                CallbackQueryHandler(show_select_1, pattern='^' + 'select1' + '$'),
-                CallbackQueryHandler(show_select_2, pattern='^' + 'select2' + '$'),
+                CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(
@@ -90,18 +90,17 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
             con.CALENDAR: [
-                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
-                CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '$'),
-                CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_EVENT_OK + '$'),
-                CallbackQueryHandler(show_select_2, pattern='^' + con.SELECT_ALM + '.*$'),
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '<' + '$'),
+                CallbackQueryHandler(update_page_of_month, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
+                CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '|' + con.GO_BACK + '<<' + '$'),
+                CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
+                # CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '<$'),
             ]
         },
-        fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start),],
+        fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],
     )
     dispatcher.add_handler(conv_handler)
-
-    # Base.metadata.create_all()
 
     # Start the Bot
     updater.start_polling()

@@ -34,6 +34,9 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     DELETE_EVENT_OK,
     CALLBACK_QUERY,
     SELECT_ALM,
+    SELECT_EVENT,
+    BACK_LIST,
+    FORWARD_LIST,
 ) = (
     'PROPERTY_TO_EDIT',
     'EDIT_NAME',
@@ -49,6 +52,9 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     'DELETE_EVENT_OK',
     'CALLBACK_QUERY',
     'SELECT_ALM',
+    'SELECT_EVENT',
+    'BACK_LIST',
+    'FORWARD_LIST',
 )
 
 # Flags
@@ -87,3 +93,20 @@ RU_MONTH = {
     11: 'ноября',
     12: 'декабря',
 }
+
+RU_MONTH_CAPITALIZED = {
+    1: 'Январь',
+    2: 'Февраль',
+    3: 'Март',
+    4: 'Апрель',
+    5: 'Май',
+    6: 'Июнь',
+    7: 'Июль',
+    8: 'Август',
+    9: 'Сентябрь',
+    10: 'Октябрь',
+    11: 'Ноябрь',
+    12: 'Декабрь',
+}
+
+NUM_EVENTS_ON_PAGE = 5
