@@ -231,8 +231,10 @@ def publish_event(update: Update, context: CallbackContext) -> int:
             event_data.event_city = user_data[con.EDIT_CITY],
             event_data.event_country = user_data[con.EDIT_COUNTRY],
             event_data.event_desc = user_data[con.EDIT_DESC],
-            event_data.event_date_start = DATE(user_data[con.EDIT_DATE_START + '_dt']),
-            event_data.event_date_end = DATE(user_data[con.EDIT_DATE_START + '_dt']),
+            # event_data.event_date_start = '2022-12-28',
+            # event_data.event_date_end = '2022-12-31',
+            event_data.event_date_start = user_data[con.EDIT_DATE_START + '_dt'],
+            event_data.event_date_end = user_data[con.EDIT_DATE_START + '_dt'],
             event_data.event_photo = user_data[con.EDIT_PHOTO],
     session.commit()
     send_text_and_keyboard(
