@@ -25,7 +25,6 @@ def creating_event(update: Update, context: CallbackContext) -> int:
         keyboard=set_keyboard(context, con.CREATE_EVENT),
         message_text=con.TEXT_REQUEST[con.CREATE_EVENT],
     )
-    # return con.CREATE_EVENT
     if user_data[con.CURRENT_EVENT_ID] is None:
         return con.CREATE_EVENT
     else:

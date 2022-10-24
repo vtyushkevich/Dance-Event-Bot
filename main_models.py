@@ -60,9 +60,10 @@ class Event(TimestampMixin, Base):
 
 
 class User(TimestampMixin, Base):
-    first_name = Column(String(200), unique=False, nullable=False)
-    second_name = Column(String(200), unique=False, nullable=False)
-    nickname = Column(String(200), unique=False, nullable=False)
+    unique_id = Column(Integer, unique=True, nullable=False)
+    first_name = Column(String(200), unique=False, nullable=True)
+    second_name = Column(String(200), unique=False, nullable=True)
+    nickname = Column(String(200), unique=False, nullable=True)
     access_level = Column(Integer, unique=False, nullable=False, default=1)
     deleted = Column(Boolean, unique=False, nullable=False, default=False)
 
