@@ -223,19 +223,21 @@ def publish_event(update: Update, context: CallbackContext) -> int:
             created_at=datetime.datetime.today()
         )
         session.add(event)
+        _cb = con.START_OVER
     else:
         event_id_int = user_data[con.CURRENT_EVENT_ID]
         event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
         if event_data:
-            event_data.event_name = user_data[con.EDIT_NAME],
-            event_data.event_city = user_data[con.EDIT_CITY],
-            event_data.event_country = user_data[con.EDIT_COUNTRY],
-            event_data.event_desc = user_data[con.EDIT_DESC],
-            # event_data.event_date_start = '2022-12-28',
-            # event_data.event_date_end = '2022-12-31',
-            event_data.event_date_start = user_data[con.EDIT_DATE_START + '_dt'],
-            event_data.event_date_end = user_data[con.EDIT_DATE_START + '_dt'],
-            event_data.event_photo = user_data[con.EDIT_PHOTO],
+            session.query(Event).filter_by(id=event_id_int).update(
+                {'event_name': user_data[con.EDIT_NAME],
+                 'event_city': user_data[con.EDIT_CITY],
+                 'event_country': user_data[con.EDIT_COUNTRY],
+                 'event_desc': user_data[con.EDIT_DESC],
+                 'event_date_start': user_data[con.EDIT_DATE_START + '_dt'],
+                 'event_date_end': user_data[con.EDIT_DATE_END + '_dt'],
+                 "event_photo": user_data[con.EDIT_PHOTO], }
+            )
+        _cb = con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month)
     session.commit()
     send_text_and_keyboard(
         update=query.message.edit_reply_markup,
@@ -244,7 +246,10 @@ def publish_event(update: Update, context: CallbackContext) -> int:
     )
     send_text_and_keyboard(
         update=query.message.reply_text,
-        keyboard=[[InlineKeyboardButton("Ок", callback_data=con.START_OVER)]],
+        keyboard=[[InlineKeyboardButton("Ок", callback_data=_cb)]],
         message_text="\U0001F4F0 Событие опубликовано!"
     )
-    return con.CREATE_EVENT
+    if user_data[con.CURRENT_EVENT_ID] is None:
+        return con.CREATE_EVENT
+    else:
+        return con.CALENDAR
