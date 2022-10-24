@@ -67,7 +67,8 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
     user_data[con.CURRENT_EVENT_ID] = None
     keyboard_list = []
     event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
-    id_list = user_data['date_counter'].get(datetime.date(event_date_int // 100, event_date_int - (event_date_int // 100)*100, 1))[1]
+    y_from_data, m_from_data = event_date_int // 100, event_date_int - (event_date_int // 100)*100
+    id_list = user_data['date_counter'].get(datetime.date(y_from_data, m_from_data, 1))[1]
 
     session = Session()
     events_of_month = session.query(Event).filter(Event.id.in_(id_list)).order_by(Event.event_date_start)
@@ -75,8 +76,7 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 
     for event in events_of_month:
         keyboard_list.append(
-            [InlineKeyboardButton('%s %s %s' %
-                                  (event.event_name, event.event_city, event.event_country),
+            [InlineKeyboardButton(event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
                                   callback_data=con.SELECT_EVENT + '_' + str(event.id))]
         )
     keyboard_nav = [
@@ -88,13 +88,13 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
         send_text_and_keyboard(
             update=query.message.reply_text,
             keyboard=keyboard_list + keyboard_nav,
-            message_text="Выберите событие"
+            message_text=con.RU_MONTH_CAPITALIZED[m_from_data] + ' ' + str(y_from_data) + " г.\nВыберите событие"
         )
     else:
         send_text_and_keyboard(
             update=query.message.edit_text,
             keyboard=keyboard_list + keyboard_nav,
-            message_text="Выберите событие"
+            message_text=con.RU_MONTH_CAPITALIZED[m_from_data] + ' ' + str(y_from_data) + " г.\nВыберите событие"
         )
     return con.CALENDAR
 
@@ -142,8 +142,10 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
 
     query.delete_message()
-    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
+    session = Session()
+    event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
+    session.commit()
     keyboard = [
         [InlineKeyboardButton("Удалить", callback_data=con.DELETE_CONFIRMED + '_' + str(event_id_int))],
         [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id_int))],
@@ -151,7 +153,7 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=query.message.reply_text,
         keyboard=keyboard,
-        message_text="Вы уверены, что хотите удалить событие?",
+        message_text=event_data.event_name + "\n" + "Вы уверены, что хотите удалить событие?",
     )
     return con.CALENDAR
 
@@ -161,7 +163,6 @@ def delete_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     user_data = context.user_data
 
-    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
@@ -183,7 +184,6 @@ def edit_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     user_data = context.user_data
 
-    # event_id_int = int(re.search(pattern='\d+', string=query.data).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
@@ -198,7 +198,6 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
 
-    # print(Base.metadata)
     Base.metadata.drop_all()
     Base.metadata.create_all()
     session = Session()

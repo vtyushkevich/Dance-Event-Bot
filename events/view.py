@@ -17,6 +17,7 @@ from main_models import Event, Session
 def creating_event(update: Update, context: CallbackContext) -> int:
     update.callback_query.answer()
     message = update.callback_query.message
+    user_data = context.user_data
     if message.caption:
         message.delete()
     send_text_and_keyboard(
@@ -24,7 +25,11 @@ def creating_event(update: Update, context: CallbackContext) -> int:
         keyboard=set_keyboard(context, con.CREATE_EVENT),
         message_text=con.TEXT_REQUEST[con.CREATE_EVENT],
     )
-    return con.CREATE_EVENT
+    # return con.CREATE_EVENT
+    if user_data[con.CURRENT_EVENT_ID] is None:
+        return con.CREATE_EVENT
+    else:
+        return con.CALENDAR
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
@@ -164,7 +169,7 @@ def set_doc(update: Update, context: CallbackContext) -> int:
             _msg = update.message.reply_photo(
                 photo=open(user_data[category], 'rb'),
             )
-            user_data[category] = _msg.photo[-1]
+            user_data[category] = _msg.photo[-1].file_id
             send_text_and_keyboard(
                 update=update.message.reply_text,
                 keyboard=set_keyboard(context, con.CREATE_EVENT),

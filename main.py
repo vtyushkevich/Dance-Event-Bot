@@ -43,6 +43,7 @@ def main() -> None:
                 CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
             ],
             con.CREATE_EVENT: [
+                CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
                 CallbackQueryHandler(
                     get_date_to_edit, pattern='^(' + con.EDIT_DATE_START + '|' + con.EDIT_DATE_END + ')$'
                 ),

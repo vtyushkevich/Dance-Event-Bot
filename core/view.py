@@ -62,7 +62,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_PHOTO] != "") +
                                   "   Картинка", callback_data=con.EDIT_PHOTO)],
             [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER)],
+            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER if user_data[con.CURRENT_EVENT_ID] is None else con.SELECT_EVENT + '_' + str(user_data[con.CURRENT_EVENT_ID]))],
         ]
     if stage == con.CALENDAR:
         keyboard = [
@@ -70,12 +70,11 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
         ]
     if stage == con.SELECT_ALM:
+        button_list = []
         if user_data['page_event_pointer'][0] - con.NUM_EVENTS_ON_PAGE >= 0:
             button_list = [InlineKeyboardButton("\U000023EA назад", callback_data=con.BACK_LIST)]
-        elif user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE <= len(user_data['date_counter']):
-            button_list = [InlineKeyboardButton("\U000023E9 вперед", callback_data=con.FORWARD_LIST)]
-        else:
-            button_list = []
+        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE <= len(user_data['date_counter']):
+            button_list = button_list + [InlineKeyboardButton("\U000023E9 вперед", callback_data=con.FORWARD_LIST)]
         keyboard = [
             button_list,
             [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)]
