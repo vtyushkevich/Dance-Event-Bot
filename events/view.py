@@ -115,7 +115,7 @@ def set_date_value(update: Update, context: CallbackContext):
             )
         if _validation_passed:
             _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
-            user_data[category] = _datetype[category] + str(result.day) + ' ' + con.RU_MONTH.get(
+            user_data[category] = _datetype[category] + ' ' + str(result.day) + ' ' + con.RU_MONTH.get(
                 result.month) + ' ' + str(result.year) + ' г.'
             del user_data[con.PROPERTY_TO_EDIT]
             send_text_and_keyboard(
