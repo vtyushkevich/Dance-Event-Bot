@@ -72,9 +72,9 @@ def set_keyboard(context: CallbackContext, stage: str):
     if stage == con.SELECT_ALM:
         button_list = []
         if user_data['page_event_pointer'][0] - con.NUM_EVENTS_ON_PAGE >= 0:
-            button_list = [InlineKeyboardButton("\U000023EA назад", callback_data=con.BACK_LIST)]
-        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE <= len(user_data['date_counter']):
-            button_list = button_list + [InlineKeyboardButton("\U000023E9 вперед", callback_data=con.FORWARD_LIST)]
+            button_list = [InlineKeyboardButton("\U000023EA Назад", callback_data=con.BACK_LIST)]
+        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE < len(user_data['date_counter']):
+            button_list = button_list + [InlineKeyboardButton("\U000023E9 Вперед", callback_data=con.FORWARD_LIST)]
         keyboard = [
             button_list,
             [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)]
