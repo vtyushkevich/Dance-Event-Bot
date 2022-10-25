@@ -7,11 +7,9 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-
 from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_2, \
-    browse_event_calendar, show_events_of_month, update_page_of_month, show_selected_event, edit_event
+    show_events_of_month, update_page_of_month, show_selected_event, edit_event
 from config import BOT_TOKEN
-# from core.models import Base
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
     set_date_value, set_property_value, set_photo, set_doc
 from main.view import (
@@ -19,9 +17,7 @@ from main.view import (
     start_over,
     cancel,
 )
-
 import const as con
-from main_models import Session
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
