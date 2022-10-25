@@ -8,9 +8,9 @@ import const as con
 
 def set_default_userdata(context: CallbackContext, event_data=None):
     if event_data is None:
-        context.user_data[con.EDIT_NAME] = "Название события"
-        context.user_data[con.EDIT_CITY] = "Город"
-        context.user_data[con.EDIT_COUNTRY] = "Страна"
+        context.user_data[con.EDIT_NAME] = ""
+        context.user_data[con.EDIT_CITY] = ""
+        context.user_data[con.EDIT_COUNTRY] = ""
         context.user_data[con.EDIT_DESC] = ""
         context.user_data[con.EDIT_DATE_START] = "Дата начала"
         context.user_data[con.EDIT_DATE_END] = "Дата окончания"
@@ -47,12 +47,12 @@ def set_keyboard(context: CallbackContext, stage: str):
         ]
     if stage == con.CREATE_EVENT:
         keyboard = [
-            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_NAME] != "Название события") +
-                                  "   " + user_data[con.EDIT_NAME], callback_data=con.EDIT_NAME)],
-            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_COUNTRY] != "Страна") +
-                                  "   " + user_data[con.EDIT_COUNTRY], callback_data=con.EDIT_COUNTRY)],
-            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_CITY] != "Город") +
-                                  "   " + user_data[con.EDIT_CITY], callback_data=con.EDIT_CITY)],
+            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_NAME] != "") +
+                                  "   " + ("Название события" if user_data[con.EDIT_NAME] == "" else user_data[con.EDIT_NAME]), callback_data=con.EDIT_NAME)],
+            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_COUNTRY] != "") +
+                                  "   " + ("Страна" if user_data[con.EDIT_COUNTRY] == "" else user_data[con.EDIT_COUNTRY]), callback_data=con.EDIT_COUNTRY)],
+            [InlineKeyboardButton(check_symbol(user_data[con.EDIT_CITY] != "") +
+                                  "   " + ("Город" if user_data[con.EDIT_CITY] == "" else user_data[con.EDIT_CITY]), callback_data=con.EDIT_CITY)],
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_DATE_START] != "Дата начала") +
                                   "   " + str(user_data[con.EDIT_DATE_START]), callback_data=con.EDIT_DATE_START)],
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_DATE_END] != "Дата окончания") +
@@ -77,7 +77,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             button_list = button_list + [InlineKeyboardButton("\U000023E9 Вперед", callback_data=con.FORWARD_LIST)]
         keyboard = [
             button_list,
-            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.GO_BACK)]
+            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
         ]
     return keyboard
 

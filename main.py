@@ -34,8 +34,8 @@ def main() -> None:
         entry_points=[CommandHandler('start', start)],
         states={
             con.TOP_LEVEL: [
-                CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
+                CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
                 CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
             ],
             con.CREATE_EVENT: [
@@ -87,14 +87,14 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
             con.CALENDAR: [
-                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '<' + '$'),
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '$'),
                 CallbackQueryHandler(update_page_of_month, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
                 CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '|' + con.GO_BACK + '<<' + '$'),
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),
                 CallbackQueryHandler(edit_event, pattern='^' + con.MANAGEMENT + '.*$'),
-                CallbackQueryHandler(start_over, pattern='^' + con.GO_BACK + '$'),
+                CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
             ]
         },
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],

@@ -11,10 +11,12 @@ from core.view import send_text_and_keyboard, set_keyboard, generate_text_event
 
 import const as con
 from events.validators import validate_user_data
+from main.view import logger
 from main_models import Event, Session
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
+    # logger.info('creating_event___' + str(update.callback_query.data))
     update.callback_query.answer()
     message = update.callback_query.message
     user_data = context.user_data
@@ -25,15 +27,13 @@ def creating_event(update: Update, context: CallbackContext) -> int:
         keyboard=set_keyboard(context, con.CREATE_EVENT),
         message_text=con.TEXT_REQUEST[con.CREATE_EVENT],
     )
-    if user_data[con.CURRENT_EVENT_ID] is None:
-        return con.CREATE_EVENT
-    else:
-        return con.CALENDAR
+    return con.CREATE_EVENT
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    user_data = context.user_data
     context.user_data[con.PROPERTY_TO_EDIT] = query.data
     context.user_data[con.CALLBACK_QUERY] = query
     send_text_and_keyboard(
