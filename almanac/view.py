@@ -200,7 +200,6 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
 
     Base.metadata.drop_all()
     Base.metadata.create_all()
-    session = Session()
     return con.TOP_LEVEL
 
 

@@ -5,7 +5,7 @@ import config
 from sqlalchemy import (
     create_engine,
     Column,
-    Integer, String, Date, ForeignKey, DateTime, Boolean,
+    Integer, String, Date, ForeignKey, DateTime, Boolean, BigInteger,
 )
 
 from sqlalchemy.orm import (
@@ -27,10 +27,7 @@ class Base:
         return str(self)
 
 
-DB_URL = 'sqlite:///tg_bot.db'
-DB_ECHO = True
-
-engine = create_engine(url=DB_URL, echo=DB_ECHO)
+engine = create_engine(url=config.DB_URL, echo=config.DB_ECHO)
 Base = declarative_base(bind=engine, cls=Base)
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
@@ -60,7 +57,7 @@ class Event(TimestampMixin, Base):
 
 
 class User(TimestampMixin, Base):
-    unique_id = Column(Integer, unique=True, nullable=False)
+    unique_id = Column(BigInteger, unique=True, nullable=False)
     first_name = Column(String(200), unique=False, nullable=True)
     second_name = Column(String(200), unique=False, nullable=True)
     nickname = Column(String(200), unique=False, nullable=True)
