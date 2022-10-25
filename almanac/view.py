@@ -76,8 +76,11 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 
     for event in events_of_month:
         keyboard_list.append(
-            [InlineKeyboardButton(event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
-                                  callback_data=con.SELECT_EVENT + '_' + str(event.id))]
+            [InlineKeyboardButton(
+                str(event.event_date_start.day) + '-' + str(event.event_date_end.day) +
+                ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
+                callback_data=con.SELECT_EVENT + '_' + str(event.id))
+            ]
         )
     keyboard_nav = [
         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK + '<')],
@@ -121,8 +124,8 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
             event_data.event_name,
             event_data.event_city,
             event_data.event_country,
-            'Дата начала ' + str(event_data.event_date_start.day) + con.RU_MONTH.get(event_data.event_date_start.month) + ' ' + str(event_data.event_date_start.year) + ' г.',
-            'Дата окончания ' + str(event_data.event_date_end.day) + con.RU_MONTH.get(event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.',
+            'Дата начала ' + str(event_data.event_date_start.day) + ' ' + con.RU_MONTH.get(event_data.event_date_start.month) + ' ' + str(event_data.event_date_start.year) + ' г.',
+            'Дата окончания ' + str(event_data.event_date_end.day) + ' ' + con.RU_MONTH.get(event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.',
             event_data.event_desc
         )
         if event_data.event_photo:

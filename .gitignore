@@ -133,5 +133,5 @@ config.py
 *.jpg
 *.png
 /_examples
-/_banners
-#*.db
+#/_banners
+*.db
