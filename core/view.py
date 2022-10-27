@@ -1,9 +1,11 @@
 from datetime import datetime, date
 
+from sqlalchemy import and_
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
 import const as con
+from main_models import Session, Event
 
 
 def set_default_userdata(context: CallbackContext, event_data=None):
@@ -19,8 +21,10 @@ def set_default_userdata(context: CallbackContext, event_data=None):
         context.user_data[con.EDIT_PHOTO] = ""
         context.user_data[con.PROPERTY_TO_EDIT] = None
         context.user_data[con.CALLBACK_QUERY] = None
-        context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
+        # context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
         context.user_data[con.CURRENT_EVENT_ID] = None
+        context.user_data[con.START_PAGE] = 0
+        context.user_data[con.END_PAGE] = con.NUM_EVENTS_ON_PAGE
     else:
         context.user_data[con.EDIT_NAME] = event_data.event_name
         context.user_data[con.EDIT_CITY] = event_data.event_city
@@ -64,16 +68,11 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER if user_data[con.CURRENT_EVENT_ID] is None else con.SELECT_EVENT + '_' + str(user_data[con.CURRENT_EVENT_ID]))],
         ]
-    if stage == con.CALENDAR:
-        keyboard = [
-            [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT)],
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
-        ]
     if stage == con.SELECT_ALM:
         button_list = []
         if user_data['page_event_pointer'][0] - con.NUM_EVENTS_ON_PAGE >= 0:
             button_list = [InlineKeyboardButton("\U000023EA Назад", callback_data=con.BACK_LIST)]
-        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE < len(user_data['date_counter']):
+        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE < len(user_data[con.DATE_COUNTER]):
             button_list = button_list + [InlineKeyboardButton("\U000023E9 Вперед", callback_data=con.FORWARD_LIST)]
         keyboard = [
             button_list,
@@ -133,5 +132,20 @@ def send_text_and_keyboard(update, keyboard, message_text, photo=None):
             )
 
 
-def generate_fake_event_date():
-    pass
+def update_date_id_dict() -> dict:
+    session = Session()
+    future_events = session.query(Event).filter(and_(Event.event_date_start >= datetime.today(), Event.deleted == False)).order_by(
+        Event.event_date_start)
+    session.commit()
+    date_floor_list = []
+    id_event_dict = {}
+    for event in future_events:
+        ev = event.event_date_start.replace(day=1)
+        date_floor_list.append(ev)
+        id_event_dict.setdefault(ev, [0, []])
+        num_id_list = id_event_dict[ev]
+        num_id_list[0] = num_id_list[0] + 1
+        id_list = num_id_list[1]
+        id_list.append(event.id)
+        id_event_dict[ev] = num_id_list
+    return id_event_dict

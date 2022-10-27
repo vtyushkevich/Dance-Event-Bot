@@ -8,7 +8,7 @@ from telegram.ext import (
     Filters,
 )
 from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_2, \
-    show_events_of_month, update_page_of_month, show_selected_event, edit_event
+    show_events_of_month, update_page_of_month, show_selected_event, edit_event, browse_event_calendar
 from config import BOT_TOKEN
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
     set_date_value, set_property_value, set_photo, set_doc
@@ -87,9 +87,9 @@ def main() -> None:
                 CallbackQueryHandler(creating_event, pattern='^' + con.GO_BACK + '$'),
             ],
             con.CALENDAR: [
-                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '$'),
-                CallbackQueryHandler(update_page_of_month, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
-                CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '|' + con.GO_BACK + '<<' + '$'),
+                CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '.*$'),
+                CallbackQueryHandler(browse_event_calendar, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
+                CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '$'),
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),

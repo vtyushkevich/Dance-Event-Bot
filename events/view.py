@@ -7,7 +7,7 @@ from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 from telegram_bot_calendar import DetailedTelegramCalendar
 
-from core.view import send_text_and_keyboard, set_keyboard, generate_text_event
+from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict
 
 import const as con
 from events.validators import validate_user_data
@@ -241,7 +241,7 @@ def publish_event(update: Update, context: CallbackContext) -> int:
                  'event_date_end': user_data[con.EDIT_DATE_END + '_dt'],
                  "event_photo": user_data[con.EDIT_PHOTO], }
             )
-        _cb = con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month)
+        _cb = con.SELECT_EVENT + '_' + str(event_id_int)
     session.commit()
     send_text_and_keyboard(
         update=query.message.edit_reply_markup,
@@ -253,6 +253,7 @@ def publish_event(update: Update, context: CallbackContext) -> int:
         keyboard=[[InlineKeyboardButton("Ок", callback_data=_cb)]],
         message_text="\U0001F4F0 Событие опубликовано!"
     )
+    user_data[con.DATE_COUNTER] = update_date_id_dict()
     if user_data[con.CURRENT_EVENT_ID] is None:
         return con.CREATE_EVENT
     else:
