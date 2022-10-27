@@ -239,7 +239,7 @@ def update_page_of_month_new(update: Update, context: CallbackContext) -> int:
         date_list = list(user_data[con.DATE_COUNTER].keys())
         event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
         y_from_data, m_from_data = event_date_int // 100, event_date_int - (event_date_int // 100) * 100
-        start = (date_list.index(datetime.date(y_from_data, m_from_data, 1)) + 1) // con.NUM_EVENTS_ON_PAGE
+        start = (date_list.index(datetime.date(y_from_data, m_from_data, 1))) // con.NUM_EVENTS_ON_PAGE
         start = start * con.NUM_EVENTS_ON_PAGE
         stop = start + con.NUM_EVENTS_ON_PAGE
     if start + con.NUM_EVENTS_ON_PAGE < len(user_data[con.DATE_COUNTER]):
