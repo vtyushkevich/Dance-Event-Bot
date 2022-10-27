@@ -47,7 +47,7 @@ def set_keyboard(context: CallbackContext, stage: str):
             [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)],
             [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
             # [InlineKeyboardButton("Посмотреть архив", callback_data=con.ARCHIVE)],
-            [InlineKeyboardButton("Пересоздать базу данных", callback_data=con.DELETE_EVENT)],
+            # [InlineKeyboardButton("Пересоздать базу данных", callback_data=con.DELETE_EVENT)],
         ]
     if stage == con.CREATE_EVENT:
         keyboard = [

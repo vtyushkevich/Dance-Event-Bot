@@ -36,7 +36,7 @@ def main() -> None:
             con.TOP_LEVEL: [
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
-                CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
+                # CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
