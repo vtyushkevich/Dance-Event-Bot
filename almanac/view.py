@@ -30,7 +30,6 @@ def browse_event_calendar(update: Update, context: CallbackContext) -> int:
     keyboard_list = []
     keyboard_nav = update_page_of_month_new(update, context)
     page_slice = slice(user_data[con.START_PAGE], user_data[con.END_PAGE])
-    print("___" + str(page_slice))
     date_list = list(user_data[con.DATE_COUNTER].keys())
     for event_num in date_list[page_slice]:
         keyboard_list.append(
