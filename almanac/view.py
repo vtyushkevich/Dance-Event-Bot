@@ -62,10 +62,15 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
     session.commit()
 
     for event in events_of_month:
+        _date_str_for_button = ''
+        if event.event_date_start.month != event.event_date_end.month:
+            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '.' + '{:02d}'.format(event.event_date_start.month) \
+                                   + '-' + '{:02d}'.format(event.event_date_end.day) + '.' + '{:02d}'.format(event.event_date_end.month)
+        else:
+            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '-' + '{:02d}'.format(event.event_date_end.day)
         keyboard_list.append(
             [InlineKeyboardButton(
-                str(event.event_date_start.day) + '-' + str(event.event_date_end.day) +
-                ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
+                _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
                 callback_data=con.SELECT_EVENT + '_' + str(event.id))]
         )
     keyboard_nav = [
@@ -196,28 +201,28 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
     return con.TOP_LEVEL
 
 
-def update_page_of_month(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
-    start = user_data[con.PAGE_SLICE].start
-    stop = user_data[con.PAGE_SLICE].stop
-    if query.data == con.FORWARD_LIST:
-        if start + con.NUM_EVENTS_ON_PAGE > len(user_data[con.DATE_COUNTER]):
-            user_data['page_event_pointer'][0] = start
-            user_data['page_event_pointer'][1] = stop
-        else:
-            user_data['page_event_pointer'][0] = start + con.NUM_EVENTS_ON_PAGE
-            user_data['page_event_pointer'][1] = stop + con.NUM_EVENTS_ON_PAGE
-    else:
-        if start - con.NUM_EVENTS_ON_PAGE < 0:
-            user_data['page_event_pointer'][0] = start
-            user_data['page_event_pointer'][1] = stop
-        else:
-            user_data['page_event_pointer'][0] = start - con.NUM_EVENTS_ON_PAGE
-            user_data['page_event_pointer'][1] = stop - con.NUM_EVENTS_ON_PAGE
-    browse_event_calendar(update, context)
-    return con.CALENDAR
+# def update_page_of_month(update: Update, context: CallbackContext) -> int:
+#     query = update.callback_query
+#     query.answer()
+#     user_data = context.user_data
+#     start = user_data[con.PAGE_SLICE].start
+#     stop = user_data[con.PAGE_SLICE].stop
+#     if query.data == con.FORWARD_LIST:
+#         if start + con.NUM_EVENTS_ON_PAGE > len(user_data[con.DATE_COUNTER]):
+#             user_data['page_event_pointer'][0] = start
+#             user_data['page_event_pointer'][1] = stop
+#         else:
+#             user_data['page_event_pointer'][0] = start + con.NUM_EVENTS_ON_PAGE
+#             user_data['page_event_pointer'][1] = stop + con.NUM_EVENTS_ON_PAGE
+#     else:
+#         if start - con.NUM_EVENTS_ON_PAGE < 0:
+#             user_data['page_event_pointer'][0] = start
+#             user_data['page_event_pointer'][1] = stop
+#         else:
+#             user_data['page_event_pointer'][0] = start - con.NUM_EVENTS_ON_PAGE
+#             user_data['page_event_pointer'][1] = stop - con.NUM_EVENTS_ON_PAGE
+#     browse_event_calendar(update, context)
+#     return con.CALENDAR
 
 
 def update_page_of_month_new(update: Update, context: CallbackContext) -> int:

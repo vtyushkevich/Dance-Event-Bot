@@ -7,8 +7,8 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-from almanac.view import show_event_calendar, delete_event_confirm, delete_event, show_select_2, \
-    show_events_of_month, update_page_of_month, show_selected_event, edit_event, browse_event_calendar
+from almanac.view import show_event_calendar, delete_event_confirm, delete_event, \
+    show_events_of_month, show_selected_event, edit_event, browse_event_calendar
 from config import BOT_TOKEN
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
     set_date_value, set_property_value, set_photo, set_doc

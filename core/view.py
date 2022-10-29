@@ -90,8 +90,8 @@ def generate_text_event(
         event_desc: str,
 ):
     _text = '\U0001F46B ' + event_name + '\n' * 2
-    _text = _text + '\U0001F4CD ' + ('' if event_city == 'Город' else event_city + ', ')
-    _text = _text + ('' if event_country == 'Страна' else event_country) + '\n' * 2
+    _text = _text + '\U0001F4CD ' + ('' if event_city == '' else event_city + ', ')
+    _text = _text + ('' if event_country == '' else event_country) + '\n' * 2
     _text = _text + '\U0001F680 ' + ("Дата начала не указана" if event_date_start == "Дата начала" else
                                      event_date_start) + '\n' * 2
     _text = _text + '\U0001F3C1 ' + ("Дата окончания не указана" if event_date_end == "Дата окончания" else
@@ -134,7 +134,7 @@ def send_text_and_keyboard(update, keyboard, message_text, photo=None):
 
 def update_date_id_dict() -> dict:
     session = Session()
-    future_events = session.query(Event).filter(and_(Event.event_date_start >= datetime.today(), Event.deleted == False)).order_by(
+    future_events = session.query(Event).filter(and_(Event.event_date_start >= date.today(), Event.deleted == False)).order_by(
         Event.event_date_start)
     session.commit()
     date_floor_list = []

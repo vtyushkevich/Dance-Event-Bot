@@ -43,9 +43,9 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
             validation_comment = '\U0001F6AB Дата окончания события не должна быть раньше начала события'
             return validation_passed, validation_comment
     if category == con.PUBLISH_EVENT:
-        validation_passed = userdata.user_data[con.EDIT_NAME] != "Название события" \
-                            and userdata.user_data[con.EDIT_CITY] != "Город" \
-                            and userdata.user_data[con.EDIT_COUNTRY] != "Страна" \
+        validation_passed = userdata.user_data[con.EDIT_NAME] != "" \
+                            and userdata.user_data[con.EDIT_CITY] != "" \
+                            and userdata.user_data[con.EDIT_COUNTRY] != "" \
                             and userdata.user_data[con.EDIT_DESC] != "" \
                             and userdata.user_data[con.EDIT_DATE_START + '_dt'] is not None \
                             and userdata.user_data[con.EDIT_DATE_END + '_dt'] is not None
