@@ -18,6 +18,7 @@ from main.view import (
     cancel,
 )
 import const as con
+from users.view import manage_users, show_admins_list, delete_admin_confirm, delete_admin, add_admin_confirm, add_admin
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -36,7 +37,7 @@ def main() -> None:
             con.TOP_LEVEL: [
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
-                # CallbackQueryHandler(show_select_2, pattern='^' + con.DELETE_EVENT + '$'),
+                CallbackQueryHandler(manage_users, pattern='^' + con.MANAGE_USERS + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
@@ -94,6 +95,18 @@ def main() -> None:
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),
                 CallbackQueryHandler(edit_event, pattern='^' + con.MANAGEMENT + '.*$'),
+                CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
+            ],
+            con.MANAGE_USERS: [
+                CallbackQueryHandler(manage_users, pattern='^' + con.MANAGE_USERS + '$'),
+                CallbackQueryHandler(show_admins_list, pattern='^' + con.ADMINS_LIST + '$'),
+                CallbackQueryHandler(delete_admin_confirm, pattern='^' + con.ADMINS_LIST + '_id\d*' + '$'),
+                CallbackQueryHandler(delete_admin, pattern='^' + con.DELETE_USER_CONFIRMED + '_id\d*' + '$'),
+                CallbackQueryHandler(add_admin_confirm, pattern='^' + con.ADD_USER + '$'),
+                MessageHandler(
+                    Filters.contact & ~(Filters.command | Filters.regex('^Done$')),
+                    add_admin,
+                ),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
             ]
         },

@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from sqlalchemy import and_
 from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 
@@ -16,23 +17,26 @@ logger = logging.getLogger(__name__)
 
 
 def start(update: Update, context: CallbackContext) -> int:
-    """Send a message on `/start`."""
     logger.info("User %s started the conversation.", update.message.from_user.first_name)
     Base.metadata.create_all(checkfirst=True)
     session = Session()
-    user_data = session.query(User).filter_by(unique_id=BASIC_ADMIN_ID).one_or_none()
-    if not user_data:
+    user_info = session.query(User).filter_by(unique_id=update.message.from_user.id).one_or_none()
+    if not user_info:
         new_user = User(
-            unique_id=BASIC_ADMIN_ID,
-            first_name="",
-            second_name="",
-            nickname="",
-            access_level=1,
+            unique_id=update.message.from_user.id,
+            first_name=update.message.from_user.first_name,
+            second_name=update.message.from_user.last_name,
+            nickname=update.message.from_user.username,
+            access_level=100,
             deleted=False,
             created_at=datetime.today()
         )
         session.add(new_user)
-        session.commit()
+    else:
+        user_info.first_name = update.message.from_user.first_name
+        user_info.second_name = update.message.from_user.last_name
+        user_info.nickname = update.message.from_user.username
+    session.commit()
     send_text_and_keyboard(
         update=update.message.reply_text,
         keyboard=set_keyboard(context, con.START),
@@ -65,4 +69,3 @@ def cancel(update: Update, context: CallbackContext) -> int:
         message_text='До встречи!',
     )
     return ConversationHandler.END
-

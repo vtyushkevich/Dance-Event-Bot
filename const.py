@@ -42,6 +42,10 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     PAGE_SLICE,
     START_PAGE,
     END_PAGE,
+    MANAGE_USERS,
+    ADMINS_LIST,
+    DELETE_USER_CONFIRMED,
+    ADD_USER,
 ) = (
     'PROPERTY_TO_EDIT',
     'EDIT_NAME',
@@ -65,6 +69,10 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     'PAGE_SLICE',
     'START_PAGE',
     'END_PAGE',
+    'MANAGE_USERS',
+    'ADMINS_LIST',
+    'DELETE_USER_CONFIRMED',
+    'ADD_USER',
 )
 
 # Messages to user
@@ -77,7 +85,8 @@ TEXT_REQUEST = {
     EDIT_COUNTRY: "Укажите страну (до 50 символов)",
     EDIT_PHOTO: "Добавьте картинку к описанию (JPG/JPEG, PNG, GIF, размер файла до 10 Мб)",
     CREATE_EVENT: "Пожалуйста, заполните данные о событии, которое вы планируете добавить в календарь \U0000270D",
-    CALENDAR: 'Выберите период'
+    CALENDAR: 'Выберите период',
+    MANAGE_USERS: 'Управление пользователями',
 }
 
 RU_LSTEP = {'y': 'год', 'm': 'месяц', 'd': 'день'}

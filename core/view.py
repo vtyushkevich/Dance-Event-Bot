@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, date
 
 from sqlalchemy import and_
@@ -5,7 +6,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
 import const as con
-from main_models import Session, Event
+from main_models import Session, Event, User
 
 
 def set_default_userdata(context: CallbackContext, event_data=None):
@@ -46,6 +47,7 @@ def set_keyboard(context: CallbackContext, stage: str):
         keyboard = [
             [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)],
             [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
+            [InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)],
             # [InlineKeyboardButton("Посмотреть архив", callback_data=con.ARCHIVE)],
             # [InlineKeyboardButton("Пересоздать базу данных", callback_data=con.DELETE_EVENT)],
         ]
@@ -77,6 +79,12 @@ def set_keyboard(context: CallbackContext, stage: str):
         keyboard = [
             button_list,
             [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
+        ]
+    if stage == con.MANAGE_USERS:
+        keyboard = [
+            [InlineKeyboardButton("Список администраторов", callback_data=con.ADMINS_LIST)],
+            [InlineKeyboardButton("Добавить администратора", callback_data=con.ADD_USER)],
+            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)],
         ]
     return keyboard
 
@@ -149,3 +157,28 @@ def update_date_id_dict() -> dict:
         id_list.append(event.id)
         id_event_dict[ev] = num_id_list
     return id_event_dict
+
+
+def update_admins_list() -> dict:
+    session = Session()
+    admins = session.query(User).filter(
+        and_(User.access_level == 1, User.deleted == False)).order_by(
+        User.created_at)
+    session.commit()
+    admins_list = []
+    for admin in admins:
+        admins_list.append(admin)
+    return admins_list
+
+
+def get_full_user_name(first_name, second_name, nickname) -> str:
+    first_name = "" if first_name is None else first_name
+    second_name = "" if second_name is None else second_name
+    nickname = "" if nickname is None else nickname
+    return '%s %s %s' % (str(first_name), str(second_name), str(nickname))
+
+
+def get_id_from_callback_data(query_data: str) -> int:
+    id_str = str(re.search(pattern='_id[0-9]*', string=query_data).group())
+    id_int = int(re.search(pattern='[0-9]+', string=id_str).group())
+    return id_int

@@ -201,30 +201,6 @@ def show_select_2(update: Update, context: CallbackContext) -> int:
     return con.TOP_LEVEL
 
 
-# def update_page_of_month(update: Update, context: CallbackContext) -> int:
-#     query = update.callback_query
-#     query.answer()
-#     user_data = context.user_data
-#     start = user_data[con.PAGE_SLICE].start
-#     stop = user_data[con.PAGE_SLICE].stop
-#     if query.data == con.FORWARD_LIST:
-#         if start + con.NUM_EVENTS_ON_PAGE > len(user_data[con.DATE_COUNTER]):
-#             user_data['page_event_pointer'][0] = start
-#             user_data['page_event_pointer'][1] = stop
-#         else:
-#             user_data['page_event_pointer'][0] = start + con.NUM_EVENTS_ON_PAGE
-#             user_data['page_event_pointer'][1] = stop + con.NUM_EVENTS_ON_PAGE
-#     else:
-#         if start - con.NUM_EVENTS_ON_PAGE < 0:
-#             user_data['page_event_pointer'][0] = start
-#             user_data['page_event_pointer'][1] = stop
-#         else:
-#             user_data['page_event_pointer'][0] = start - con.NUM_EVENTS_ON_PAGE
-#             user_data['page_event_pointer'][1] = stop - con.NUM_EVENTS_ON_PAGE
-#     browse_event_calendar(update, context)
-#     return con.CALENDAR
-
-
 def update_page_of_month_new(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     user_data = context.user_data
