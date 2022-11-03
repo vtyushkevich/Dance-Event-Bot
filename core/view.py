@@ -22,7 +22,6 @@ def set_default_userdata(context: CallbackContext, event_data=None):
         context.user_data[con.EDIT_PHOTO] = ""
         context.user_data[con.PROPERTY_TO_EDIT] = None
         context.user_data[con.CALLBACK_QUERY] = None
-        # context.user_data['page_event_pointer'] = [0, con.NUM_EVENTS_ON_PAGE]
         context.user_data[con.CURRENT_EVENT_ID] = None
         context.user_data[con.START_PAGE] = 0
         context.user_data[con.END_PAGE] = con.NUM_EVENTS_ON_PAGE
@@ -42,15 +41,13 @@ def set_default_userdata(context: CallbackContext, event_data=None):
 
 def set_keyboard(context: CallbackContext, stage: str):
     user_data = context.user_data
-    keyboard = None
+    keyboard = []
     if stage == con.START:
-        keyboard = [
-            [InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)],
-            [InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)],
-            [InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)],
-            # [InlineKeyboardButton("Посмотреть архив", callback_data=con.ARCHIVE)],
-            # [InlineKeyboardButton("Пересоздать базу данных", callback_data=con.DELETE_EVENT)],
-        ]
+        keyboard.append([InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)])
+        if user_access(context) <= 20:
+            keyboard.append([InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)])
+        if user_access(context) == 1:
+            keyboard.append([InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)])
     if stage == con.CREATE_EVENT:
         keyboard = [
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_NAME] != "") +
@@ -162,7 +159,7 @@ def update_date_id_dict() -> dict:
 def update_admins_list() -> dict:
     session = Session()
     admins = session.query(User).filter(
-        and_(User.access_level == 1, User.deleted == False)).order_by(
+        and_(User.access_level <= con.ADMIN_AL, User.deleted == False)).order_by(
         User.created_at)
     session.commit()
     admins_list = []
@@ -174,11 +171,32 @@ def update_admins_list() -> dict:
 def get_full_user_name(first_name, second_name, nickname) -> str:
     first_name = "" if first_name is None else first_name
     second_name = "" if second_name is None else second_name
-    nickname = "" if nickname is None else nickname
-    return '%s %s %s' % (str(first_name), str(second_name), str(nickname))
+    nickname = "" if nickname is None else '@' + nickname
+    return ('%s %s %s' % (str(first_name), str(second_name), str(nickname))).strip()
 
 
 def get_id_from_callback_data(query_data: str) -> int:
     id_str = str(re.search(pattern='_id[0-9]*', string=query_data).group())
     id_int = int(re.search(pattern='[0-9]+', string=id_str).group())
     return id_int
+
+
+def get_username_from_text(some_text: str) -> str:
+    search_result = re.search(pattern='@[a-zA-Z]{1}[\d\w]{4,31}', string=some_text)
+    if search_result:
+        nickname = search_result.group()
+        nickname = re.search(pattern='[a-zA-Z]{1}[\d\w]{4,31}', string=nickname).group()
+    else:
+        nickname = next(m.group() for m in re.finditer(r'\w+', some_text))
+    return nickname
+
+
+def user_access(context: CallbackContext) -> int:
+    session = Session()
+    user_id = context.user_data[con.LOGGED_USER_ID]
+    user = session.query(User).filter_by(unique_id=user_id).one_or_none()
+    session.commit()
+    if user:
+        return user.access_level
+    else:
+        return con.USER_AL

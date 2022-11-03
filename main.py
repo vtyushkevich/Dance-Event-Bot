@@ -15,7 +15,7 @@ from events.view import creating_event, get_date_to_edit, get_property_to_edit, 
 from main.view import (
     start,
     start_over,
-    cancel,
+    cancel, startup_deploy,
 )
 import const as con
 from users.view import manage_users, show_admins_list, delete_admin_confirm, delete_admin, add_admin_confirm, add_admin
@@ -104,7 +104,7 @@ def main() -> None:
                 CallbackQueryHandler(delete_admin, pattern='^' + con.DELETE_USER_CONFIRMED + '_id\d*' + '$'),
                 CallbackQueryHandler(add_admin_confirm, pattern='^' + con.ADD_USER + '$'),
                 MessageHandler(
-                    Filters.contact & ~(Filters.command | Filters.regex('^Done$')),
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')),
                     add_admin,
                 ),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
@@ -113,6 +113,7 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],
     )
     dispatcher.add_handler(conv_handler)
+    startup_deploy()
 
     # Start the Bot
     updater.start_polling()

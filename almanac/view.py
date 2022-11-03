@@ -1,12 +1,12 @@
 import datetime
 import re
+import textwrap
 
-from sqlalchemy import and_
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
-from core.view import set_keyboard, send_text_and_keyboard, generate_text_event, set_default_userdata, \
+from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
     update_date_id_dict
 from events.view import creating_event
 from main_models import Base, Session, Event
@@ -70,7 +70,7 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
             _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '-' + '{:02d}'.format(event.event_date_end.day)
         keyboard_list.append(
             [InlineKeyboardButton(
-                _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
+                textwrap.fill(_date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country, width=40),
                 callback_data=con.SELECT_EVENT + '_' + str(event.id))]
         )
     keyboard_nav = [

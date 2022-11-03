@@ -1,20 +1,19 @@
-import re
-from datetime import date
+from datetime import datetime
 
-from sqlalchemy import and_
-from telegram import Update, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
+from config import BASIC_ADMIN_ID
 from core.view import send_text_and_keyboard, set_keyboard, update_admins_list, get_full_user_name, \
-    get_id_from_callback_data
-from main_models import Session, Event, User
+    get_id_from_callback_data, get_username_from_text
+from main_models import Session, User
 
 
 def manage_users(update: Update, context: CallbackContext) -> int:
     update.callback_query.answer()
     message = update.callback_query.message
-    user_data = context.user_data
+
     send_text_and_keyboard(
         update=message.edit_text,
         keyboard=set_keyboard(context, con.MANAGE_USERS),
@@ -27,13 +26,15 @@ def show_admins_list(update: Update, context: CallbackContext) -> int:
     update.callback_query.answer()
     message = update.callback_query.message
     user_data = context.user_data
+
     admins_list = update_admins_list()
     keyboard_list = []
     for admin in admins_list:
-        keyboard_list.append(
-            [InlineKeyboardButton(get_full_user_name(admin.first_name, admin.second_name, admin.nickname),
-                                  callback_data=con.ADMINS_LIST + '_id' + str(admin.unique_id))],
-        )
+        if user_data[con.LOGGED_USER_ID] != admin.unique_id:
+            keyboard_list.append(
+                [InlineKeyboardButton(get_full_user_name(admin.first_name, admin.second_name, admin.nickname),
+                                      callback_data=con.ADMINS_LIST + '_id' + str(admin.unique_id))],
+            )
     keyboard_nav = [
         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.MANAGE_USERS)],
         [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
@@ -69,20 +70,25 @@ def delete_admin_confirm(update: Update, context: CallbackContext) -> int:
 def delete_admin(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    user_data = context.user_data
 
     admin_id = get_id_from_callback_data(query.data)
     session = Session()
     admin = session.query(User).filter_by(unique_id=admin_id).one_or_none()
     session.commit()
     if admin:
-        admin.access_level = 100
-        session.commit()
+        if admin.unique_id != BASIC_ADMIN_ID:
+            admin.access_level = con.USER_AL
+            session.commit()
+            message_text = f"Пользователь {get_full_user_name(admin.first_name, admin.second_name, admin.nickname)} удален из списка администраторов"
+        else:
+            message_text = "Базовый администратор не может быть удален из списка администраторов"
+    else:
+        message_text = f"Пользователь не найден в списке администраторов"
     keyboard = [[InlineKeyboardButton("Ок", callback_data=con.ADMINS_LIST)]]
     send_text_and_keyboard(
         update=query.message.edit_text,
         keyboard=keyboard,
-        message_text=f"Пользователь {get_full_user_name(admin.first_name, admin.second_name, admin.nickname)} удален из списка администраторов",
+        message_text=message_text
     )
     return con.MANAGE_USERS
 
@@ -99,32 +105,58 @@ def add_admin_confirm(update: Update, context: CallbackContext) -> int:
         keyboard=keyboard,
         message_text="Отправьте контакт пользователя, которого планируете добавить в список администраторов",
     )
-    # reply_markup = ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, one_time_keyboard=True)
-    # query.message.reply_text(
-    #     text='Отправьте контакт пользователя, которого планируете сделать администратором',
-    #     reply_markup=reply_markup
-    # )
     return con.MANAGE_USERS
 
 
 def add_admin(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    # query.answer()
-    user_data = context.user_data
     _cb = context.user_data[con.CALLBACK_QUERY]
-
-    admin_id = update.message.contact.user_id
-    update.message.delete()
     session = Session()
-    admin = session.query(User).filter_by(unique_id=admin_id).one_or_none()
-    session.commit()
-    if admin:
-        admin.access_level = 1
-        session.commit()
     keyboard = [[InlineKeyboardButton("Ок", callback_data=con.ADMINS_LIST)]]
-    send_text_and_keyboard(
-        update=_cb.message.edit_text,
-        keyboard=keyboard,
-        message_text=f"Пользователь {get_full_user_name(admin.first_name, admin.second_name, admin.nickname)} добавлен в список администраторов",
-    )
+
+    update.message.delete()
+    forward_from_user = update.message.forward_from
+    if forward_from_user:
+        admin = session.query(User).filter_by(unique_id=forward_from_user.id).one_or_none()
+        session.commit()
+        if admin is None:
+            new_admin = User(
+                unique_id=forward_from_user.id,
+                first_name=forward_from_user.first_name,
+                second_name=forward_from_user.last_name,
+                nickname=forward_from_user.username,
+                access_level=con.ADMIN_AL,
+                deleted=False,
+                created_at=datetime.today()
+            )
+            session.add(new_admin)
+        else:
+            admin.first_name = forward_from_user.first_name
+            admin.second_name = forward_from_user.last_name
+            admin.nickname = forward_from_user.username
+            admin.access_level = con.ADMIN_AL
+            admin.deleted = False
+        session.commit()
+        send_text_and_keyboard(
+            update=_cb.message.edit_text,
+            keyboard=keyboard,
+            message_text=f"Пользователь {get_full_user_name(forward_from_user.first_name, forward_from_user.last_name, forward_from_user.username)} добавлен в список администраторов",
+        )
+    else:
+        username = get_username_from_text(update.message.text)
+        admin = session.query(User).filter_by(nickname=username).one_or_none()
+        session.commit()
+        if admin:
+            admin.access_level = con.ADMIN_AL
+            admin.deleted = False
+            admin = session.query(User).filter_by(nickname=username).one_or_none()
+            session.commit()
+            message_text = f"Пользователь {get_full_user_name(admin.first_name, admin.second_name, admin.nickname)} добавлен в список администраторов"
+        else:
+            keyboard = [[InlineKeyboardButton("Ок", callback_data=con.ADD_USER)]]
+            message_text = f"Пользователь с таким именем не найден в списке пользователей бота"
+        send_text_and_keyboard(
+            update=_cb.message.edit_text,
+            keyboard=keyboard,
+            message_text=message_text,
+        )
     return con.MANAGE_USERS
