@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, date
+from datetime import date
 
 from sqlalchemy import and_
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -66,16 +66,6 @@ def set_keyboard(context: CallbackContext, stage: str):
                                   "   Картинка", callback_data=con.EDIT_PHOTO)],
             [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
             [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER if user_data[con.CURRENT_EVENT_ID] is None else con.SELECT_EVENT + '_' + str(user_data[con.CURRENT_EVENT_ID]))],
-        ]
-    if stage == con.SELECT_ALM:
-        button_list = []
-        if user_data['page_event_pointer'][0] - con.NUM_EVENTS_ON_PAGE >= 0:
-            button_list = [InlineKeyboardButton("\U000023EA Назад", callback_data=con.BACK_LIST)]
-        if user_data['page_event_pointer'][0] + con.NUM_EVENTS_ON_PAGE < len(user_data[con.DATE_COUNTER]):
-            button_list = button_list + [InlineKeyboardButton("\U000023E9 Вперед", callback_data=con.FORWARD_LIST)]
-        keyboard = [
-            button_list,
-            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
         ]
     if stage == con.MANAGE_USERS:
         keyboard = [

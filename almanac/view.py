@@ -7,7 +7,7 @@ from telegram.ext import CallbackContext
 
 import const as con
 from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
-    update_date_id_dict
+    update_date_id_dict, user_access
 from events.view import creating_event
 from main_models import Base, Session, Event
 
@@ -64,13 +64,18 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
     for event in events_of_month:
         _date_str_for_button = ''
         if event.event_date_start.month != event.event_date_end.month:
-            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '.' + '{:02d}'.format(event.event_date_start.month) \
-                                   + '-' + '{:02d}'.format(event.event_date_end.day) + '.' + '{:02d}'.format(event.event_date_end.month)
+            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '.' + '{:02d}'.format(
+                event.event_date_start.month) \
+                                   + '-' + '{:02d}'.format(event.event_date_end.day) + '.' + '{:02d}'.format(
+                event.event_date_end.month)
         else:
-            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '-' + '{:02d}'.format(event.event_date_end.day)
+            _date_str_for_button = '{:02d}'.format(event.event_date_start.day) + '-' + '{:02d}'.format(
+                event.event_date_end.day)
         keyboard_list.append(
             [InlineKeyboardButton(
-                textwrap.fill(_date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country, width=40),
+                textwrap.fill(
+                    _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
+                    width=40),
                 callback_data=con.SELECT_EVENT + '_' + str(event.id))]
         )
     keyboard_nav = [
@@ -103,15 +108,12 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
-    keyboard = [
-        [InlineKeyboardButton("\U0000270D Редактировать событие",
-                              callback_data=con.MANAGEMENT + '_' + str(event_id_int))],
-        [InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT + '_' + str(event_id_int))],
-        [InlineKeyboardButton("\U00002B05 К событиям месяца",
-                              callback_data=con.SELECT_ALM + '_' + str(
-                                  event_data.event_date_start.year * 100 + event_data.event_date_start.month))],
-        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)],
-    ]
+    keyboard = []
+    if user_access(context) <= 20:
+        keyboard.append([InlineKeyboardButton("\U0000270D Редактировать событие", callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
+        keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT + '_' + str(event_id_int))])
+    keyboard.append([InlineKeyboardButton("\U00002B05 К событиям месяца", callback_data=con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month))])
+    keyboard.append([InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)])
     if event_data:
         _text = generate_text_event(
             event_data.event_name,
