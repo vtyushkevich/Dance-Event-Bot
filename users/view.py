@@ -103,7 +103,8 @@ def add_admin_confirm(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=query.message.edit_text,
         keyboard=keyboard,
-        message_text="Отправьте контакт пользователя, которого планируете добавить в список администраторов",
+        message_text="Перешлите боту любое личное сообщение пользователя, которого планируете добавить в список администраторов, или "
+                     "отправьте сообщением имя пользователя (начинается с символа @)",
     )
     return con.MANAGE_USERS
 

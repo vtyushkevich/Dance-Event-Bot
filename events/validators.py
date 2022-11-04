@@ -29,13 +29,13 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
             if not validation_passed:
                 validation_comment = '\U0001F6AB Некорректный формат файла'
                 return validation_passed, validation_comment
-    if category == con.EDIT_DATE_START + '_dt' and checked_date is not None or \
-            category == con.EDIT_DATE_END + '_dt' and checked_date is not None:
+    if category == con.EDIT_DATE_START_DT and checked_date is not None or \
+            category == con.EDIT_DATE_END_DT and checked_date is not None:
         validation_passed = checked_date >= date.today()
         if not validation_passed:
             validation_comment = '\U0001F6AB Дата события не должна быть в прошлом времени'
             return validation_passed, validation_comment
-    if (category == con.EDIT_DATE_START + '_dt' or category == con.EDIT_DATE_END + '_dt') \
+    if (category == con.EDIT_DATE_START_DT or category == con.EDIT_DATE_END_DT) \
             and checked_date is not None and checked_sec_date is not None:
         _delta: timedelta = (checked_sec_date - checked_date)
         validation_passed = _delta.total_seconds() >= 0
@@ -47,8 +47,8 @@ def validate_user_data(category: str, userdata=None, mimetype=None, checked_date
                             and userdata.user_data[con.EDIT_CITY] != "" \
                             and userdata.user_data[con.EDIT_COUNTRY] != "" \
                             and userdata.user_data[con.EDIT_DESC] != "" \
-                            and userdata.user_data[con.EDIT_DATE_START + '_dt'] is not None \
-                            and userdata.user_data[con.EDIT_DATE_END + '_dt'] is not None
+                            and userdata.user_data[con.EDIT_DATE_START_DT] is not None \
+                            and userdata.user_data[con.EDIT_DATE_END_DT] is not None
         if not validation_passed:
             validation_comment = '\U0001F6AB Не заполнены все поля события'
             return validation_passed, validation_comment

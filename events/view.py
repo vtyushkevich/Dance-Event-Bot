@@ -1,17 +1,13 @@
 import datetime
-import re
 from pathlib import Path
 
-from sqlalchemy.dialects.sqlite import DATE
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 from telegram_bot_calendar import DetailedTelegramCalendar
 
-from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict
-
 import const as con
+from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict
 from events.validators import validate_user_data
-from main.view import logger
 from main_models import Event, Session
 
 
@@ -105,11 +101,11 @@ def set_date_value(update: Update, context: CallbackContext):
     elif result:
         user_data = context.user_data
         category = user_data[con.PROPERTY_TO_EDIT]
-        user_data[category + '_dt'] = result
-        _validation_passed, _validation_comment = validate_user_data(category + '_dt', checked_date=result)
+        user_data[category + '_DT'] = result
+        _validation_passed, _validation_comment = validate_user_data(category + '_DT', checked_date=result)
         if _validation_passed:
             _validation_passed, _validation_comment = validate_user_data(
-                category + '_dt',
+                category + '_DT',
                 checked_date=user_data[con.EDIT_DATE_START_DT],
                 checked_sec_date=user_data[con.EDIT_DATE_END_DT]
             )
@@ -125,7 +121,7 @@ def set_date_value(update: Update, context: CallbackContext):
             )
             return con.CREATE_EVENT
         else:
-            user_data[category + '_dt'] = None
+            user_data[category + '_DT'] = None
             send_text_and_keyboard(
                 update=query.edit_message_text,
                 keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=category)]],
