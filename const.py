@@ -146,7 +146,15 @@ NUM_EVENTS_ON_PAGE = 5
 (
     DEF_GO,
     PROB_GO,
+    DONT_GO,
 ) = (
     1,
     2,
+    0,
 )
+
+# Picks for parties
+STATUS = {
+    1: "\U00002705",
+    2: "\U00002705",
+}
