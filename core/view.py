@@ -17,8 +17,8 @@ def set_default_userdata(context: CallbackContext, event_data=None):
         context.user_data[con.EDIT_DESC] = ""
         context.user_data[con.EDIT_DATE_START] = "Дата начала"
         context.user_data[con.EDIT_DATE_END] = "Дата окончания"
-        context.user_data[con.EDIT_DATE_START + '_dt'] = None
-        context.user_data[con.EDIT_DATE_END + '_dt'] = None
+        context.user_data[con.EDIT_DATE_START_DT] = None
+        context.user_data[con.EDIT_DATE_END_DT] = None
         context.user_data[con.EDIT_PHOTO] = ""
         context.user_data[con.PROPERTY_TO_EDIT] = None
         context.user_data[con.CALLBACK_QUERY] = None
@@ -34,8 +34,8 @@ def set_default_userdata(context: CallbackContext, event_data=None):
                 event_data.event_date_start.month) + ' ' + str(event_data.event_date_start.year) + ' г.'
         context.user_data[con.EDIT_DATE_END] = "Дата окончания " + str(event_data.event_date_end.day) + ' ' + con.RU_MONTH.get(
                 event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.'
-        context.user_data[con.EDIT_DATE_START + '_dt'] = date(event_data.event_date_start.year, event_data.event_date_start.month, event_data.event_date_start.day)
-        context.user_data[con.EDIT_DATE_END + '_dt'] = date(event_data.event_date_end.year, event_data.event_date_end.month, event_data.event_date_end.day)
+        context.user_data[con.EDIT_DATE_START_DT] = date(event_data.event_date_start.year, event_data.event_date_start.month, event_data.event_date_start.day)
+        context.user_data[con.EDIT_DATE_END_DT] = date(event_data.event_date_end.year, event_data.event_date_end.month, event_data.event_date_end.day)
         context.user_data[con.EDIT_PHOTO] = event_data.event_photo
 
 
@@ -44,9 +44,8 @@ def set_keyboard(context: CallbackContext, stage: str):
     keyboard = []
     if stage == con.START:
         keyboard.append([InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)])
-        if user_access(context) <= 20:
+        if user_access(context) <= con.ADMIN_AL:
             keyboard.append([InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)])
-        if user_access(context) == 1:
             keyboard.append([InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)])
     if stage == con.CREATE_EVENT:
         keyboard = [

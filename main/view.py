@@ -42,7 +42,7 @@ def start(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=update.message.reply_text,
         keyboard=set_keyboard(context, con.START),
-        message_text=f"{BASIC_ADMIN_ID}\U0001F483 Я бот для отслеживания танцевальных событий и расскажу, что происходит в мире танцев "
+        message_text=f"\U0001F483 Я бот для отслеживания танцевальных событий и расскажу, что происходит в мире танцев "
                      "\U0001F525",
     )
     set_default_userdata(context)

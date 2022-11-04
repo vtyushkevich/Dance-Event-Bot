@@ -110,8 +110,8 @@ def set_date_value(update: Update, context: CallbackContext):
         if _validation_passed:
             _validation_passed, _validation_comment = validate_user_data(
                 category + '_dt',
-                checked_date=user_data[con.EDIT_DATE_START + '_dt'],
-                checked_sec_date=user_data[con.EDIT_DATE_END + '_dt']
+                checked_date=user_data[con.EDIT_DATE_START_DT],
+                checked_sec_date=user_data[con.EDIT_DATE_END_DT]
             )
         if _validation_passed:
             _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
@@ -220,8 +220,8 @@ def publish_event(update: Update, context: CallbackContext) -> int:
             event_city=user_data[con.EDIT_CITY],
             event_country=user_data[con.EDIT_COUNTRY],
             event_desc=user_data[con.EDIT_DESC],
-            event_date_start=user_data[con.EDIT_DATE_START + '_dt'],
-            event_date_end=user_data[con.EDIT_DATE_END + '_dt'],
+            event_date_start=user_data[con.EDIT_DATE_START_DT],
+            event_date_end=user_data[con.EDIT_DATE_END_DT],
             event_photo=user_data[con.EDIT_PHOTO],
             created_by=1,
             created_at=datetime.datetime.today()
@@ -237,8 +237,8 @@ def publish_event(update: Update, context: CallbackContext) -> int:
                  'event_city': user_data[con.EDIT_CITY],
                  'event_country': user_data[con.EDIT_COUNTRY],
                  'event_desc': user_data[con.EDIT_DESC],
-                 'event_date_start': user_data[con.EDIT_DATE_START + '_dt'],
-                 'event_date_end': user_data[con.EDIT_DATE_END + '_dt'],
+                 'event_date_start': user_data[con.EDIT_DATE_START_DT],
+                 'event_date_end': user_data[con.EDIT_DATE_END_DT],
                  "event_photo": user_data[con.EDIT_PHOTO], }
             )
         _cb = con.SELECT_EVENT + '_' + str(event_id_int)
