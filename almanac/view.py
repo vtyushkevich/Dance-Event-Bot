@@ -108,8 +108,11 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
-    keyboard = []
-    if user_access(context) <= 20:
+    keyboard = [
+        [InlineKeyboardButton("Точно пойду", callback_data=con.CHECK_IN + '_' + str(con.DEF_GO))],
+        [InlineKeyboardButton("Возможно пойду", callback_data=con.CHECK_IN + '_' + str(con.PROB_GO))]
+    ]
+    if user_access(context) <= con.ADMIN_AL:
         keyboard.append([InlineKeyboardButton("\U0000270D Редактировать событие", callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
         keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие", callback_data=con.DELETE_EVENT + '_' + str(event_id_int))])
     keyboard.append([InlineKeyboardButton("\U00002B05 К событиям месяца", callback_data=con.SELECT_ALM + '_' + str(event_data.event_date_start.year * 100 + event_data.event_date_start.month))])

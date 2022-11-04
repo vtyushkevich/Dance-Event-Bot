@@ -49,6 +49,7 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     ADMINS_LIST,
     DELETE_USER_CONFIRMED,
     ADD_USER,
+    CHECK_IN,
 ) = (
     'PROPERTY_TO_EDIT',
     'EDIT_NAME',
@@ -79,6 +80,7 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     'ADMINS_LIST',
     'DELETE_USER_CONFIRMED',
     'ADD_USER',
+    'CHECK_IN',
 )
 
 # Messages to user
@@ -138,4 +140,13 @@ NUM_EVENTS_ON_PAGE = 5
     1,
     20,
     100,
+)
+
+# Party status
+(
+    DEF_GO,
+    PROB_GO,
+) = (
+    1,
+    2,
 )

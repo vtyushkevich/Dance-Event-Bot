@@ -70,3 +70,14 @@ class User(TimestampMixin, Base):
         return f'{self.__class__.__name__}(' \
                f'id={self.id} ' \
                f'title={self.nickname} )'
+
+
+class Party(TimestampMixin, Base):
+    event_id = Column(Integer, ForeignKey('events.id'), unique=False, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), unique=False, nullable=False)
+    status = Column(Integer, unique=False, nullable=False)
+
+    def __str__(self):
+        return f'{self.__class__.__name__}(' \
+               f'id={self.id} ' \
+               f'title={self.nickname} )'
