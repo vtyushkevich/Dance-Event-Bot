@@ -44,6 +44,7 @@ def set_keyboard(context: CallbackContext, stage: str):
     keyboard = []
     if stage == con.START:
         keyboard.append([InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)])
+        keyboard.append([InlineKeyboardButton("События участника", callback_data=con.FIND_EVENTS)])
         if user_access(context) <= con.ADMIN_AL:
             keyboard.append([InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)])
             keyboard.append([InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)])

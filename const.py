@@ -6,6 +6,7 @@
     MANAGEMENT,
     GO_BACK,
     CALENDAR,
+    FIND_EVENTS,
 ) = (
     'START',
     'ARCHIVE',
@@ -13,6 +14,7 @@
     'MANAGEMENT',
     'GO_BACK',
     'CALENDAR',
+    'FIND_EVENTS',
 )
 
 # Stages
@@ -50,6 +52,7 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     DELETE_USER_CONFIRMED,
     ADD_USER,
     CHECK_IN,
+    WHO_GOES,
 ) = (
     'PROPERTY_TO_EDIT',
     'EDIT_NAME',
@@ -81,6 +84,7 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     'DELETE_USER_CONFIRMED',
     'ADD_USER',
     'CHECK_IN',
+    'WHO_GOES',
 )
 
 # Messages to user

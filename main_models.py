@@ -65,6 +65,7 @@ class User(TimestampMixin, Base):
     deleted = Column(Boolean, unique=False, nullable=False, default=False)
 
     events = relationship('Event', back_populates='user', uselist=False)
+    parties = relationship('Party', back_populates='user', uselist=True)
 
     def __str__(self):
         return f'{self.__class__.__name__}(' \
@@ -77,7 +78,11 @@ class Party(TimestampMixin, Base):
     user_id = Column(Integer, ForeignKey('users.id'), unique=False, nullable=False)
     status = Column(Integer, unique=False, nullable=False)
 
+    user = relationship('User', back_populates='parties', uselist=False)
+
     def __str__(self):
         return f'{self.__class__.__name__}(' \
                f'id={self.id} ' \
-               f'title={self.nickname} )'
+               f'user_id={self.user_id} ' \
+               f'user_nick={self.user.nickname} ' \
+               f'event_id={self.event_id} )'
