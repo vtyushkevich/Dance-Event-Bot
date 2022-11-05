@@ -98,6 +98,7 @@ def main() -> None:
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),
                 CallbackQueryHandler(edit_event, pattern='^' + con.MANAGEMENT + '.*$'),
                 CallbackQueryHandler(who_goes, pattern='^' + con.WHO_GOES + '.*$'),
+                CallbackQueryHandler(find_events, pattern='^' + con.EVENTS_USER + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
             ],
             con.MANAGE_USERS: [
@@ -119,7 +120,7 @@ def main() -> None:
                     find_events_select_status,
                 ),
                 CallbackQueryHandler(find_events_select_status, pattern='^' + con.FIND_EVENTS + '.*$'),
-                CallbackQueryHandler(find_events, pattern='^' + con.WHO_GOES + '.*$'),
+                CallbackQueryHandler(find_events, pattern='^' + con.EVENTS_USER + '.*$'),
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*|.*' + con.CHECK_IN + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
             ],

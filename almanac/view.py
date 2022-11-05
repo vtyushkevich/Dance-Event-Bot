@@ -7,7 +7,7 @@ from telegram.ext import CallbackContext
 
 import const as con
 from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
-    update_date_id_dict, user_access, check_symbol, get_full_user_name
+    update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text
 from events.view import creating_event
 from main_models import Session, Event, Party, User
 
@@ -103,6 +103,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     user_data = context.user_data
 
+    from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
     search = re.search(pattern=con.SELECT_EVENT + '_\d+', string=query.data).group()
     user_data[con.CURRENT_EVENT_ID] = int(re.search(pattern='\d+', string=search).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
@@ -124,8 +125,11 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
                                               callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
         keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие",
                                               callback_data=con.DELETE_EVENT + '_' + str(event_id_int))])
-    keyboard.append([InlineKeyboardButton("\U00002B05 К событиям месяца", callback_data=con.SELECT_ALM + '_' + str(
-        event_data.event_date_start.year * 100 + event_data.event_date_start.month))])
+    if from_find_events is None:
+        keyboard.append([InlineKeyboardButton("\U00002B05 К событиям месяца", callback_data=con.SELECT_ALM + '_' + str(
+            event_data.event_date_start.year * 100 + event_data.event_date_start.month))])
+    else:
+        keyboard.append([InlineKeyboardButton("\U00002B05 Назад к событиям пользователя", callback_data=context.user_data[con.CALLBACK_QUERY].data)])
     keyboard.append([InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)])
     if event_data:
         query.message.delete()
@@ -139,8 +143,6 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
                 event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.',
             event_data.event_desc
         )
-        # if event_data.event_photo:
-        #     query.message.delete()
         send_text_and_keyboard(
             update=query.message.reply_photo if event_data.event_photo != '' else query.message.reply_text,
             keyboard=keyboard,
@@ -268,6 +270,21 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
         user_id = 0
         if forward_from_user:
             user_id = forward_from_user.id
+        else:
+            username = get_username_from_text(update.message.text)
+            session = Session()
+            user = session.query(User).filter_by(nickname=username).one_or_none()
+            if user:
+                user_id = user.unique_id
+            else:
+                keyboard = [[InlineKeyboardButton("Ок", callback_data=con.MANAGE_USERS)]]
+                message_text = f"Пользователь с таким именем не найден в списке пользователей бота"
+                send_text_and_keyboard(
+                    update=_cb.message.edit_text,
+                    keyboard=keyboard,
+                    message_text=message_text
+                )
+                return con.FIND_EVENTS
     else:
         _cb = update.callback_query
         _cb.answer()
@@ -276,8 +293,8 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
         if search:
             user_id = int(re.search(pattern='\d+', string=search.group()).group())
     keyboard = [
-        [InlineKeyboardButton(f"Точно пойдет", callback_data=con.WHO_GOES + '_' + str(con.DEF_GO) + con.ADD_USER + '_' + str(user_id))],
-        [InlineKeyboardButton(f"Возможно пойдет", callback_data=con.WHO_GOES + '_' + str(con.PROB_GO) + con.ADD_USER + '_' + str(user_id))],
+        [InlineKeyboardButton(f"Точно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.DEF_GO) + con.ADD_USER + '_' + str(user_id))],
+        [InlineKeyboardButton(f"Возможно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.PROB_GO) + con.ADD_USER + '_' + str(user_id))],
         [InlineKeyboardButton("Назад", callback_data=con.MANAGE_USERS)],
     ]
     send_text_and_keyboard(
@@ -292,8 +309,9 @@ def find_events(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     session = Session()
+    context.user_data[con.CALLBACK_QUERY] = query
 
-    search = re.search(pattern=con.WHO_GOES + '_\d+', string=query.data)
+    search = re.search(pattern=con.EVENTS_USER + '_\d+', string=query.data)
     status_int = 0
     if search:
         status_int = int(re.search(pattern='\d+', string=search.group()).group())
@@ -307,6 +325,11 @@ def find_events(update: Update, context: CallbackContext) -> int:
         [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.FIND_EVENTS + '_' + str(user_id))],
         [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
     ]
+
+    update_func = query.message.edit_text
+    if query.message.caption:
+        query.delete_message()
+        update_func = query.message.reply_text
     if event_data:
         keyboard_list = []
         for event in event_data:
@@ -314,16 +337,16 @@ def find_events(update: Update, context: CallbackContext) -> int:
             keyboard_list.append(
                 [InlineKeyboardButton(
                     _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
-                    callback_data=con.SELECT_EVENT + '_' + str(event.id))]
+                    callback_data=con.SELECT_EVENT + '_' + str(event.id) + '_' + con.ADD_USER)]
             )
         send_text_and_keyboard(
-            update=query.message.edit_text,
+            update=update_func,
             keyboard=keyboard_list + keyboard_nav,
             message_text=f"Cписок событий",
         )
     else:
         send_text_and_keyboard(
-            update=query.message.edit_text,
+            update=update_func,
             keyboard=keyboard_nav,
             message_text=f"Отметок не найдено",
         )
