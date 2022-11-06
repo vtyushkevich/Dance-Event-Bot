@@ -103,7 +103,10 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     query.answer()
     user_data = context.user_data
 
+    from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
+    if from_find_events:
+        from_find_cb = '_' + con.ADD_USER
     search = re.search(pattern=con.SELECT_EVENT + '_\d+', string=query.data).group()
     user_data[con.CURRENT_EVENT_ID] = int(re.search(pattern='\d+', string=search).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
@@ -114,13 +117,13 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     status = update_checkbox_party(context)
     status_numbers = update_numbers_who_goes(event_id_int)
     keyboard = [
-        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=con.WHO_GOES + '_' + str(con.DEF_GO))],
-        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=con.WHO_GOES + '_' + str(con.PROB_GO))],
-        [InlineKeyboardButton(check_symbol(status == con.DEF_GO) + " Точно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DEF_GO))],
-        [InlineKeyboardButton(check_symbol(status == con.PROB_GO) + " Возможно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.PROB_GO))],
-        [InlineKeyboardButton("Не пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DONT_GO))],
+        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=con.WHO_GOES + '_' + str(con.DEF_GO) + from_find_cb)],
+        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=con.WHO_GOES + '_' + str(con.PROB_GO) + from_find_cb)],
+        [InlineKeyboardButton(check_symbol(status == con.DEF_GO) + " Точно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DEF_GO) + from_find_cb)],
+        [InlineKeyboardButton(check_symbol(status == con.PROB_GO) + " Возможно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.PROB_GO) + from_find_cb)],
+        [InlineKeyboardButton("Не пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DONT_GO) + from_find_cb)],
     ]
-    if user_access(context) <= con.ADMIN_AL:
+    if user_access(context) <= con.ADMIN_AL and from_find_events is None:
         keyboard.append([InlineKeyboardButton("\U0000270D Редактировать событие",
                                               callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
         keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие",
@@ -219,6 +222,10 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     event_id = user_data[con.CURRENT_EVENT_ID]
     who_goes_str = ''
+    from_find_cb = ''
+    from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
+    if from_find_events:
+        from_find_cb = '_' + con.ADD_USER
 
     search = re.search(pattern=con.WHO_GOES + '_\d+', string=query.data)
     if search:
@@ -235,7 +242,7 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     else:
         update = query.message.edit_text
     keyboard = [
-        [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id))],
+        [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id) + from_find_cb)],
     ]
     send_text_and_keyboard(
         update=update,
@@ -292,6 +299,11 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
         user_id = 0
         if search:
             user_id = int(re.search(pattern='\d+', string=search.group()).group())
+    if user_id != 0:
+        session = Session()
+        user = session.query(User).filter_by(unique_id=user_id).one_or_none()
+    else:
+        user = None
     keyboard = [
         [InlineKeyboardButton(f"Точно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.DEF_GO) + con.ADD_USER + '_' + str(user_id))],
         [InlineKeyboardButton(f"Возможно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.PROB_GO) + con.ADD_USER + '_' + str(user_id))],
@@ -300,7 +312,7 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=_cb.message.edit_text,
         keyboard=keyboard,
-        message_text="Поиск событий по участнику:\nвыберите отметку"
+        message_text=f"Поиск событий по участнику {get_full_user_name(user.first_name, user.second_name, user.nickname)}:\nвыберите отметку"
     )
     return con.FIND_EVENTS
 
@@ -308,7 +320,6 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
 def find_events(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    session = Session()
     context.user_data[con.CALLBACK_QUERY] = query
 
     search = re.search(pattern=con.EVENTS_USER + '_\d+', string=query.data)
@@ -319,6 +330,8 @@ def find_events(update: Update, context: CallbackContext) -> int:
     user_id = 0
     if search:
         user_id = int(re.search(pattern='\d+', string=search.group()).group())
+    session = Session()
+    user = session.query(User).filter_by(unique_id=user_id).one_or_none()
     event_data = session.query(Event).filter(
             and_(Party.event_id == Event.id, Event.deleted == False, Party.status == status_int, Party.user_id == User.id, User.unique_id == user_id)).all()
     keyboard_nav = [
@@ -342,7 +355,7 @@ def find_events(update: Update, context: CallbackContext) -> int:
         send_text_and_keyboard(
             update=update_func,
             keyboard=keyboard_list + keyboard_nav,
-            message_text=f"Cписок событий",
+            message_text=f"Cписок событий пользователя {get_full_user_name(user.first_name, user.second_name, user.nickname)} c отметкой {con.STATUS_TEXT[status_int]}",
         )
     else:
         send_text_and_keyboard(
