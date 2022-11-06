@@ -6,6 +6,7 @@
     MANAGEMENT,
     GO_BACK,
     CALENDAR,
+    FIND_EVENTS,
 ) = (
     'START',
     'ARCHIVE',
@@ -13,6 +14,7 @@
     'MANAGEMENT',
     'GO_BACK',
     'CALENDAR',
+    'FIND_EVENTS',
 )
 
 # Stages
@@ -49,6 +51,9 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     ADMINS_LIST,
     DELETE_USER_CONFIRMED,
     ADD_USER,
+    CHECK_IN,
+    WHO_GOES,
+    EVENTS_USER,
 ) = (
     'PROPERTY_TO_EDIT',
     'EDIT_NAME',
@@ -79,6 +84,9 @@ TOP_LEVEL, CREATE_EVENT, CREATE_DATE, CREATE_PROPERTY, CREATE_PHOTO = range(5)
     'ADMINS_LIST',
     'DELETE_USER_CONFIRMED',
     'ADD_USER',
+    'CHECK_IN',
+    'WHO_GOES',
+    'EVENTS_USER',
 )
 
 # Messages to user
@@ -139,3 +147,24 @@ NUM_EVENTS_ON_PAGE = 5
     20,
     100,
 )
+
+# Party status
+(
+    DEF_GO,
+    PROB_GO,
+    DONT_GO,
+) = (
+    1,
+    2,
+    0,
+)
+
+# Picks for parties
+STATUS = {
+    1: "\U00002705",
+    2: "\U00002705",
+}
+STATUS_TEXT = {
+    1: "*Точно пойдет*",
+    2: "*Возможно пойдет*",
+}

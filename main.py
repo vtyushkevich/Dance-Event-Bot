@@ -8,7 +8,8 @@ from telegram.ext import (
     Filters,
 )
 from almanac.view import show_event_calendar, delete_event_confirm, delete_event, \
-    show_events_of_month, show_selected_event, edit_event, browse_event_calendar
+    show_events_of_month, show_selected_event, edit_event, browse_event_calendar, check_in_event, who_goes, \
+    get_user_to_find_events, find_events_select_status, find_events
 from config import BOT_TOKEN
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
     set_date_value, set_property_value, set_photo, set_doc
@@ -38,6 +39,7 @@ def main() -> None:
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '$'),
                 CallbackQueryHandler(creating_event, pattern='^' + con.MANAGEMENT + '$'),
                 CallbackQueryHandler(manage_users, pattern='^' + con.MANAGE_USERS + '$'),
+                CallbackQueryHandler(get_user_to_find_events, pattern='^' + con.FIND_EVENTS + '$'),
             ],
             con.CREATE_EVENT: [
                 CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
@@ -91,10 +93,12 @@ def main() -> None:
                 CallbackQueryHandler(show_event_calendar, pattern='^' + con.CALENDAR + '|' + con.GO_BACK + '.*$'),
                 CallbackQueryHandler(browse_event_calendar, pattern='^' + con.BACK_LIST + '|' + con.FORWARD_LIST + '$'),
                 CallbackQueryHandler(show_events_of_month, pattern='^' + con.SELECT_ALM + '_\d{6}' + '$'),
-                CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*$'),
+                CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*|.*' + con.CHECK_IN + '.*$'),
                 CallbackQueryHandler(delete_event_confirm, pattern='^' + con.DELETE_EVENT + '.*$'),
                 CallbackQueryHandler(delete_event, pattern='^' + con.DELETE_CONFIRMED + '.*$'),
                 CallbackQueryHandler(edit_event, pattern='^' + con.MANAGEMENT + '.*$'),
+                CallbackQueryHandler(who_goes, pattern='^' + con.WHO_GOES + '.*$'),
+                CallbackQueryHandler(find_events, pattern='^' + con.EVENTS_USER + '.*$'),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
             ],
             con.MANAGE_USERS: [
@@ -108,7 +112,18 @@ def main() -> None:
                     add_admin,
                 ),
                 CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
-            ]
+            ],
+            con.FIND_EVENTS: [
+                CallbackQueryHandler(get_user_to_find_events, pattern='^' + con.MANAGE_USERS + '$'),
+                MessageHandler(
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')),
+                    find_events_select_status,
+                ),
+                CallbackQueryHandler(find_events_select_status, pattern='^' + con.FIND_EVENTS + '.*$'),
+                CallbackQueryHandler(find_events, pattern='^' + con.EVENTS_USER + '.*$'),
+                CallbackQueryHandler(show_selected_event, pattern='^' + con.SELECT_EVENT + '.*|.*' + con.CHECK_IN + '.*$'),
+                CallbackQueryHandler(start_over, pattern='^' + con.START_OVER + '$'),
+            ],
         },
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],
     )
