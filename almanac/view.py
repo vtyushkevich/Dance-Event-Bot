@@ -120,7 +120,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
         [InlineKeyboardButton(f"Не пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DONT_GO}{from_find_cb}")],
     ]
     if user_access(context) <= con.ADMIN_AL and from_find_events is None:
-        keyboard.append([InlineKeyboardButton("\U0000270D Редактировать событие",
+        keyboard.append([InlineKeyboardButton(f"{emoji.EDIT_HAND} Редактировать событие",
                                               callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
         keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие",
                                               callback_data=con.DELETE_EVENT + '_' + str(event_id_int))])
