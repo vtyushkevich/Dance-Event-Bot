@@ -6,6 +6,7 @@ from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
+import emoji
 from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
     update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text
 from events.view import creating_event
@@ -73,27 +74,22 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
                 event.event_date_end.day)
         keyboard_list.append(
             [InlineKeyboardButton(
-                _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
-                width=40,
-                callback_data=con.SELECT_EVENT + '_' + str(event.id))]
+                f"{_date_str_for_button}, {event.event_name} {emoji.PIN}{event.event_city}, {event.event_country}",
+                callback_data=f"{con.SELECT_EVENT}_{event.id}")]
         )
     keyboard_nav = [
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK + '_' + str(event_date_int))],
-        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
+        [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=f"{con.GO_BACK}_{event_date_int}")],
+        [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
     ]
+    update_func = query.message.edit_text
     if query.message.caption:
         query.delete_message()
-        send_text_and_keyboard(
-            update=query.message.reply_text,
-            keyboard=keyboard_list + keyboard_nav,
-            message_text=con.RU_MONTH_CAPITALIZED[m_from_data] + ' ' + str(y_from_data) + " г.\nВыберите событие"
-        )
-    else:
-        send_text_and_keyboard(
-            update=query.message.edit_text,
-            keyboard=keyboard_list + keyboard_nav,
-            message_text=con.RU_MONTH_CAPITALIZED[m_from_data] + ' ' + str(y_from_data) + " г.\nВыберите событие"
-        )
+        update_func = query.message.reply_text
+    send_text_and_keyboard(
+        update=update_func,
+        keyboard=keyboard_list + keyboard_nav,
+        message_text=f"{con.RU_MONTH_CAPITALIZED[m_from_data]} {y_from_data} г.\nВыберите событие"
+    )
     session.close()
     return con.CALENDAR
 
@@ -106,9 +102,9 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
     if from_find_events:
-        from_find_cb = '_' + con.ADD_USER
-    search = re.search(pattern=con.SELECT_EVENT + '_\d+', string=query.data).group()
-    user_data[con.CURRENT_EVENT_ID] = int(re.search(pattern='\d+', string=search).group())
+        from_find_cb = f"_{con.ADD_USER}"
+    search = re.search(pattern=f"{con.SELECT_EVENT}_\d+", string=query.data).group()
+    user_data[con.CURRENT_EVENT_ID] = int(re.search(pattern="\d+", string=search).group())
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
@@ -117,11 +113,11 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     status = update_checkbox_party(context)
     status_numbers = update_numbers_who_goes(event_id_int)
     keyboard = [
-        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=con.WHO_GOES + '_' + str(con.DEF_GO) + from_find_cb)],
-        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=con.WHO_GOES + '_' + str(con.PROB_GO) + from_find_cb)],
-        [InlineKeyboardButton(check_symbol(status == con.DEF_GO) + " Точно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DEF_GO) + from_find_cb)],
-        [InlineKeyboardButton(check_symbol(status == con.PROB_GO) + " Возможно пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.PROB_GO) + from_find_cb)],
-        [InlineKeyboardButton("Не пойду", callback_data=con.SELECT_EVENT + '_' + str(event_id_int) + con.CHECK_IN + '_' + str(con.DONT_GO) + from_find_cb)],
+        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=f"{con.WHO_GOES}_{con.DEF_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=f"{con.WHO_GOES}_{con.PROB_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"{check_symbol(status == con.DEF_GO)} Точно пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DEF_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"{check_symbol(status == con.PROB_GO)} Возможно пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.PROB_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"Не пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DONT_GO}{from_find_cb}")],
     ]
     if user_access(context) <= con.ADMIN_AL and from_find_events is None:
         keyboard.append([InlineKeyboardButton("\U0000270D Редактировать событие",

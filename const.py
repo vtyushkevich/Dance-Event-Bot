@@ -159,11 +159,6 @@ NUM_EVENTS_ON_PAGE = 5
     0,
 )
 
-# Picks for parties
-STATUS = {
-    1: "\U00002705",
-    2: "\U00002705",
-}
 STATUS_TEXT = {
     1: "*Точно пойдет*",
     2: "*Возможно пойдет*",
