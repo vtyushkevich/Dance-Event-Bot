@@ -329,7 +329,6 @@ def find_events(update: Update, context: CallbackContext) -> int:
         [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=f"{con.FIND_EVENTS}_{user_id}")],
         [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
     ]
-
     update_func = query.message.edit_text
     if query.message.caption:
         query.delete_message()
@@ -340,8 +339,8 @@ def find_events(update: Update, context: CallbackContext) -> int:
             _date_str_for_button = '{:02d}'.format(event.event_date_start.month) + '.' + '{:02d}'.format(event.event_date_start.year - 2000)
             keyboard_list.append(
                 [InlineKeyboardButton(
-                    _date_str_for_button + ', ' + event.event_name + ' \U0001F4CD' + event.event_city + ', ' + event.event_country,
-                    callback_data=con.SELECT_EVENT + '_' + str(event.id) + '_' + con.ADD_USER)]
+                    f"{_date_str_for_button}, {event.event_name} {emoji.PIN}{event.event_city}, {event.event_country}",
+                    callback_data=f"{con.SELECT_EVENT}_{event.id}_{con.ADD_USER}")]
             )
         send_text_and_keyboard(
             update=update_func,
@@ -364,9 +363,9 @@ def check_in_event(update: Update, context: CallbackContext) -> int:
 
     event_id = user_data[con.CURRENT_EVENT_ID]
     user_id = user_data[con.LOGGED_USER_ID]
-    search = re.search(pattern=con.CHECK_IN + '_\d+', string=query.data)
+    search = re.search(pattern=f"{con.CHECK_IN}_\d+", string=query.data)
     if search:
-        status_int = int(re.search(pattern='\d+', string=search.group()).group())
+        status_int = int(re.search(pattern="\d+", string=search.group()).group())
         session = Session()
         party_data = session.query(Party).filter(
             and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, User.unique_id == user_id,
@@ -399,23 +398,23 @@ def update_page_of_month_new(update: Update, context: CallbackContext) -> int:
     if query.data == con.CALENDAR:
         start = 0
         stop = con.NUM_EVENTS_ON_PAGE
-    if re.match(pattern='^' + con.GO_BACK + '.*$', string=query.data) is not None:
+    if re.match(pattern=f"^{con.GO_BACK}.*$", string=query.data) is not None:
         date_list = list(user_data[con.DATE_COUNTER].keys())
-        event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
+        event_date_int = int(re.search(pattern="\d{6}", string=query.data).group())
         y_from_data, m_from_data = event_date_int // 100, event_date_int - (event_date_int // 100) * 100
         start = (date_list.index(datetime.date(y_from_data, m_from_data, 1))) // con.NUM_EVENTS_ON_PAGE
         start = start * con.NUM_EVENTS_ON_PAGE
         stop = start + con.NUM_EVENTS_ON_PAGE
     if start + con.NUM_EVENTS_ON_PAGE < len(user_data[con.DATE_COUNTER]):
-        button_forward = [InlineKeyboardButton("\U000023E9 Вперед", callback_data=con.FORWARD_LIST)]
+        button_forward = [InlineKeyboardButton(f"{emoji.FAST_FORWARD} Вперед", callback_data=con.FORWARD_LIST)]
     if start - con.NUM_EVENTS_ON_PAGE >= 0:
-        button_back = [InlineKeyboardButton("\U000023EA Назад", callback_data=con.BACK_LIST)]
+        button_back = [InlineKeyboardButton(f"{emoji.FAST_REVERSE} Назад", callback_data=con.BACK_LIST)]
     user_data[con.START_PAGE] = start
     user_data[con.END_PAGE] = stop
     button_list = button_back + button_forward
     keyboard = [
         button_list,
-        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
+        [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
     ]
     return keyboard
 
