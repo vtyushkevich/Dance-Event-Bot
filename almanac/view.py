@@ -120,16 +120,13 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
         [InlineKeyboardButton(f"Не пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DONT_GO}{from_find_cb}")],
     ]
     if user_access(context) <= con.ADMIN_AL and from_find_events is None:
-        keyboard.append([InlineKeyboardButton(f"{emoji.EDIT_HAND} Редактировать событие",
-                                              callback_data=con.MANAGEMENT + '_' + str(event_id_int))])
-        keyboard.append([InlineKeyboardButton("\U0001F5D1 Удалить событие",
-                                              callback_data=con.DELETE_EVENT + '_' + str(event_id_int))])
+        keyboard.append([InlineKeyboardButton(f"{emoji.EDIT_HAND} Редактировать событие", callback_data=f"{con.MANAGEMENT}_{event_id_int}")])
+        keyboard.append([InlineKeyboardButton(f"{emoji.TRASH_BIN} Удалить событие", callback_data=f"{con.DELETE_EVENT}_{event_id_int}")])
     if from_find_events is None:
-        keyboard.append([InlineKeyboardButton("\U00002B05 К событиям месяца", callback_data=con.SELECT_ALM + '_' + str(
-            event_data.event_date_start.year * 100 + event_data.event_date_start.month))])
+        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} К событиям месяца", callback_data=f"{con.SELECT_ALM}_{event_data.event_date_start.year * 100 + event_data.event_date_start.month}")])
     else:
-        keyboard.append([InlineKeyboardButton("\U00002B05 Назад к событиям пользователя", callback_data=context.user_data[con.CALLBACK_QUERY].data)])
-    keyboard.append([InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)])
+        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад к событиям пользователя", callback_data=context.user_data[con.CALLBACK_QUERY].data)])
+    keyboard.append([InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)])
     if event_data:
         query.message.delete()
         _text = generate_text_event(
@@ -162,13 +159,13 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
     session.commit()
     keyboard = [
-        [InlineKeyboardButton("Удалить", callback_data=con.DELETE_CONFIRMED + '_' + str(event_id_int))],
-        [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id_int))],
+        [InlineKeyboardButton("Удалить", callback_data=f"{con.DELETE_CONFIRMED}_{event_id_int}")],
+        [InlineKeyboardButton("Назад", callback_data=f"{con.SELECT_EVENT}_{event_id_int}")],
     ]
     send_text_and_keyboard(
         update=query.message.reply_text,
         keyboard=keyboard,
-        message_text=event_data.event_name + "\n" + "Вы уверены, что хотите удалить событие?",
+        message_text=f"{event_data.event_name}\nВы уверены, что хотите удалить событие?"
     )
     session.close()
     return con.CALENDAR
@@ -221,11 +218,11 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
     if from_find_events:
-        from_find_cb = '_' + con.ADD_USER
+        from_find_cb = f"_{con.ADD_USER}"
 
-    search = re.search(pattern=con.WHO_GOES + '_\d+', string=query.data)
+    search = re.search(pattern=f"{con.WHO_GOES}_\d+", string=query.data)
     if search:
-        status_int = int(re.search(pattern='\d+', string=search.group()).group())
+        status_int = int(re.search(pattern="\d+", string=search.group()).group())
         session = Session()
         party_data = session.query(Party).filter(
             and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, Party.status == status_int)).all()
@@ -238,12 +235,12 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     else:
         update = query.message.edit_text
     keyboard = [
-        [InlineKeyboardButton("Назад", callback_data=con.SELECT_EVENT + '_' + str(event_id) + from_find_cb)],
+        [InlineKeyboardButton("Назад", callback_data=f"{con.SELECT_EVENT}_{event_id}{from_find_cb}")],
     ]
     send_text_and_keyboard(
         update=update,
         keyboard=keyboard,
-        message_text=who_goes_str if who_goes_str != '' else 'Отметок не поставлено'
+        message_text=who_goes_str if who_goes_str != '' else "Отметок не поставлено"
     )
     return con.CALENDAR
 
@@ -252,9 +249,7 @@ def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     context.user_data[con.CALLBACK_QUERY] = query
-    keyboard = [
-        [InlineKeyboardButton("Назад", callback_data=con.START_OVER)],
-    ]
+    keyboard = [[InlineKeyboardButton("Назад", callback_data=con.START_OVER)]]
     send_text_and_keyboard(
         update=query.message.edit_text,
         keyboard=keyboard,
@@ -291,19 +286,19 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
     else:
         _cb = update.callback_query
         _cb.answer()
-        search = re.search(pattern=con.FIND_EVENTS + '_\d+', string=_cb.data)
+        search = re.search(pattern=f"{con.FIND_EVENTS}_\d+", string=_cb.data)
         user_id = 0
         if search:
-            user_id = int(re.search(pattern='\d+', string=search.group()).group())
+            user_id = int(re.search(pattern="\d+", string=search.group()).group())
     if user_id != 0:
         session = Session()
         user = session.query(User).filter_by(unique_id=user_id).one_or_none()
     else:
         user = None
     keyboard = [
-        [InlineKeyboardButton(f"Точно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.DEF_GO) + con.ADD_USER + '_' + str(user_id))],
-        [InlineKeyboardButton(f"Возможно пойдет", callback_data=con.EVENTS_USER + '_' + str(con.PROB_GO) + con.ADD_USER + '_' + str(user_id))],
-        [InlineKeyboardButton("Назад", callback_data=con.MANAGE_USERS)],
+        [InlineKeyboardButton(f"Точно пойдет", callback_data=f"{con.EVENTS_USER}_{con.DEF_GO}{con.ADD_USER}_{user_id}")],
+        [InlineKeyboardButton(f"Возможно пойдет", callback_data=f"{con.EVENTS_USER}_{con.PROB_GO}{con.ADD_USER}_{user_id}")],
+        [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.MANAGE_USERS)],
     ]
     send_text_and_keyboard(
         update=_cb.message.edit_text,
@@ -318,21 +313,21 @@ def find_events(update: Update, context: CallbackContext) -> int:
     query.answer()
     context.user_data[con.CALLBACK_QUERY] = query
 
-    search = re.search(pattern=con.EVENTS_USER + '_\d+', string=query.data)
+    search = re.search(pattern=f"{con.EVENTS_USER}_\d+", string=query.data)
     status_int = 0
     if search:
-        status_int = int(re.search(pattern='\d+', string=search.group()).group())
-    search = re.search(pattern=con.ADD_USER + '_\d+', string=query.data)
+        status_int = int(re.search(pattern="\d+", string=search.group()).group())
+    search = re.search(pattern=f"{con.ADD_USER}_\d+", string=query.data)
     user_id = 0
     if search:
-        user_id = int(re.search(pattern='\d+', string=search.group()).group())
+        user_id = int(re.search(pattern="\d+", string=search.group()).group())
     session = Session()
     user = session.query(User).filter_by(unique_id=user_id).one_or_none()
     event_data = session.query(Event).filter(
             and_(Party.event_id == Event.id, Event.deleted == False, Party.status == status_int, Party.user_id == User.id, User.unique_id == user_id)).all()
     keyboard_nav = [
-        [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.FIND_EVENTS + '_' + str(user_id))],
-        [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)]
+        [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=f"{con.FIND_EVENTS}_{user_id}")],
+        [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
     ]
 
     update_func = query.message.edit_text
