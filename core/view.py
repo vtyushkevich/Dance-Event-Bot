@@ -6,6 +6,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
 import const as con
+import emoji
 from main_models import Session, Event, User
 
 
@@ -30,10 +31,8 @@ def set_default_userdata(context: CallbackContext, event_data=None):
         context.user_data[con.EDIT_CITY] = event_data.event_city
         context.user_data[con.EDIT_COUNTRY] = event_data.event_country
         context.user_data[con.EDIT_DESC] = event_data.event_desc
-        context.user_data[con.EDIT_DATE_START] = "Дата начала " + str(event_data.event_date_start.day) + ' ' + con.RU_MONTH.get(
-                event_data.event_date_start.month) + ' ' + str(event_data.event_date_start.year) + ' г.'
-        context.user_data[con.EDIT_DATE_END] = "Дата окончания " + str(event_data.event_date_end.day) + ' ' + con.RU_MONTH.get(
-                event_data.event_date_end.month) + ' ' + str(event_data.event_date_end.year) + ' г.'
+        context.user_data[con.EDIT_DATE_START] = f"Дата начала {event_data.event_date_start.day} {con.RU_MONTH.get(event_data.event_date_start.month)} {event_data.event_date_start.year} г."
+        context.user_data[con.EDIT_DATE_END] = f"Дата окончания {event_data.event_date_end.day} {con.RU_MONTH.get(event_data.event_date_end.month)} {event_data.event_date_end.year} г."
         context.user_data[con.EDIT_DATE_START_DT] = date(event_data.event_date_start.year, event_data.event_date_start.month, event_data.event_date_start.day)
         context.user_data[con.EDIT_DATE_END_DT] = date(event_data.event_date_end.year, event_data.event_date_end.month, event_data.event_date_end.day)
         context.user_data[con.EDIT_PHOTO] = event_data.event_photo
@@ -43,10 +42,10 @@ def set_keyboard(context: CallbackContext, stage: str):
     user_data = context.user_data
     keyboard = []
     if stage == con.START:
-        keyboard.append([InlineKeyboardButton("\U0001F4C6   Календарь событий", callback_data=con.CALENDAR)])
-        keyboard.append([InlineKeyboardButton("\U00002708   События участника", callback_data=con.FIND_EVENTS)])
+        keyboard.append([InlineKeyboardButton(f"{emoji.CALENDAR}   Календарь событий", callback_data=con.CALENDAR)])
+        keyboard.append([InlineKeyboardButton(f"{emoji.PLANE}   События участника", callback_data=con.FIND_EVENTS)])
         if user_access(context) <= con.ADMIN_AL:
-            keyboard.append([InlineKeyboardButton("\U0001FAA9   Создать событие", callback_data=con.MANAGEMENT)])
+            keyboard.append([InlineKeyboardButton(f"{emoji.DANCE_BALL}   Создать событие", callback_data=con.MANAGEMENT)])
             keyboard.append([InlineKeyboardButton("Управление пользователями", callback_data=con.MANAGE_USERS)])
     if stage == con.CREATE_EVENT:
         keyboard = [
@@ -64,14 +63,14 @@ def set_keyboard(context: CallbackContext, stage: str):
                                   "   Описание", callback_data=con.EDIT_DESC)],
             [InlineKeyboardButton(check_symbol(user_data[con.EDIT_PHOTO] != "") +
                                   "   Картинка", callback_data=con.EDIT_PHOTO)],
-            [InlineKeyboardButton("\U0001F57A Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.START_OVER if user_data[con.CURRENT_EVENT_ID] is None else con.SELECT_EVENT + '_' + str(user_data[con.CURRENT_EVENT_ID]))],
+            [InlineKeyboardButton(f"{emoji.DANCING_MAN} Предварительный просмотр", callback_data=con.EDIT_PREVIEW)],
+            [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.START_OVER if user_data[con.CURRENT_EVENT_ID] is None else f"{con.SELECT_EVENT}_{user_data[con.CURRENT_EVENT_ID]}")],
         ]
     if stage == con.MANAGE_USERS:
         keyboard = [
             [InlineKeyboardButton("Список администраторов", callback_data=con.ADMINS_LIST)],
             [InlineKeyboardButton("Добавить администратора", callback_data=con.ADD_USER)],
-            [InlineKeyboardButton("\U000026F3 В основное меню", callback_data=con.START_OVER)],
+            [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)],
         ]
     return keyboard
 
@@ -84,24 +83,20 @@ def generate_text_event(
         event_date_end: str,
         event_desc: str,
 ):
-    _text = '\U0001F46B ' + event_name + '\n' * 2
-    _text = _text + '\U0001F4CD ' + ('' if event_city == '' else event_city + ', ')
-    _text = _text + ('' if event_country == '' else event_country) + '\n' * 2
-    _text = _text + '\U0001F680 ' + ("Дата начала не указана" if event_date_start == "Дата начала" else
-                                     event_date_start) + '\n' * 2
-    _text = _text + '\U0001F3C1 ' + ("Дата окончания не указана" if event_date_end == "Дата окончания" else
-                                     event_date_end) + '\n' * 2
-
-    _text = _text + ("" if event_desc == "" else
-                     'О событии:\n' + event_desc)
+    _text = f"{emoji.COUPLE} {event_name}\n\n"
+    _text = _text + f"{emoji.PIN} {'' if event_city == '' else f'{event_city}, '}"
+    _text = _text + f"{'' if event_country == '' else event_country}\n\n"
+    _text = _text + f"{emoji.ROCKET} {'Дата начала не указана ' if event_date_start == 'Дата начала' else event_date_start}\n\n"
+    _text = _text + f"{emoji.RACING_FLAG} {'Дата окончания не указана' if event_date_end == 'Дата окончания' else event_date_end}\n\n"
+    _text = _text + ('' if event_desc == '' else 'О событии:\n' + event_desc)
     return _text
 
 
 def check_symbol(checked: bool):
     if checked:
-        return "\U00002705"
+        return f"{emoji.GREEN_CHECK}"
     else:
-        return "\U00002611"
+        return f"{emoji.GREY_CHECK}"
 
 
 def send_text_and_keyboard(update, keyboard, message_text, photo=None):
