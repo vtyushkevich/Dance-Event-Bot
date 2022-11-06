@@ -1,0 +1,4 @@
+# Emojii list
+PIN = "\U0001F4CD"
+LEFT_ARROW = "\U00002B05"
+GOLF = "\U000026F3"
