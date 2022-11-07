@@ -2,6 +2,7 @@ import datetime
 import re
 
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import with_polymorphic
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
@@ -224,8 +225,8 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     if search:
         status_int = int(re.search(pattern="\d+", string=search.group()).group())
         session = Session()
-        party_data = session.query(Party).filter(
-            and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, Party.status == status_int)).all()
+        party_data = session.query(Party).join(User, User.id==Party.user_id).filter(
+            and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, Party.status == status_int)).order_by(User.nickname).all()
         if party_data:
             for party in party_data:
                 who_goes_str = who_goes_str + get_full_user_name(party.user.first_name, party.user.second_name, party.user.nickname) + '\n'
@@ -235,7 +236,7 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     else:
         update = query.message.edit_text
     keyboard = [
-        [InlineKeyboardButton("Назад", callback_data=f"{con.SELECT_EVENT}_{event_id}{from_find_cb}")],
+        [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=f"{con.SELECT_EVENT}_{event_id}{from_find_cb}")],
     ]
     send_text_and_keyboard(
         update=update,

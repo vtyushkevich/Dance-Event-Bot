@@ -5,6 +5,7 @@ from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 
 import const as con
+import emoji
 from config import BASIC_ADMIN_ID
 from core.view import send_text_and_keyboard, set_default_userdata, set_keyboard
 from main_models import Session, User, Base
@@ -39,11 +40,16 @@ def start(update: Update, context: CallbackContext) -> int:
         user_info.nickname = update.message.from_user.username
         user_info.deleted = False
     session.commit()
+    message_text = ""
+    user_info = session.query(User).filter_by(unique_id=update.message.from_user.id).one_or_none()
+    if user_info:
+        if user_info.access_level <= con.ADMIN_AL:
+            message_text = f"\nВы - администратор проекта {emoji.CROWN}"
     send_text_and_keyboard(
         update=update.message.reply_text,
         keyboard=set_keyboard(context, con.START),
-        message_text=f"\U0001F483 Я бот для отслеживания танцевальных событий и расскажу, что происходит в мире танцев "
-                     "\U0001F525",
+        message_text=f"{emoji.DANCING_WOMAN} Я бот для отслеживания танцевальных событий и расскажу, "
+                     f"что происходит в мире танцев {emoji.FIRE}{message_text}"
     )
     set_default_userdata(context)
     return con.TOP_LEVEL
@@ -57,7 +63,7 @@ def start_over(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=query.message.reply_text if query.message.caption else query.edit_message_text,
         keyboard=set_keyboard(context, con.START),
-        message_text="\U000026F3 Что делаем дальше?",
+        message_text=f"{emoji.GOLF} Что делаем дальше?",
     )
     set_default_userdata(context)
     return con.TOP_LEVEL
@@ -68,7 +74,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=update.message.reply_text,
         keyboard='',
-        message_text='До встречи!',
+        message_text="До встречи!",
     )
     return ConversationHandler.END
 
