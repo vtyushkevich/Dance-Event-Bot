@@ -337,7 +337,7 @@ def find_events(update: Update, context: CallbackContext) -> int:
     event_data = session.query(Event).filter(
             and_(Party.event_id == Event.id, Event.deleted == False,
                  Party.status == status_int, Party.user_id == User.id,
-                 User.unique_id == user_id)).order_by(Event.event_date_start).all()
+                 User.unique_id == user_id)).order_by(Event.event_date_start).order_by(Event.event_date_start).all()
     keyboard_nav = [
         [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=f"{con.FIND_EVENTS}_{user_id}")],
         [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
