@@ -112,7 +112,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     session.commit()
     check_in_event(update, context)
     status = update_checkbox_party(context)
-    status_numbers = update_numbers_who_goes(event_id_int)
+    status_numbers = update_numbers_who_goes(event_id=event_id_int)
     keyboard = [
         [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=f"{con.WHO_GOES}_{con.DEF_GO}{from_find_cb}")],
         [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=f"{con.WHO_GOES}_{con.PROB_GO}{from_find_cb}")],
@@ -249,8 +249,14 @@ def who_goes(update: Update, context: CallbackContext) -> int:
 def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
-    context.user_data[con.CALLBACK_QUERY] = query
-    keyboard = [[InlineKeyboardButton("Назад", callback_data=con.START_OVER)]]
+    user_data = context.user_data
+
+    user_data[con.CALLBACK_QUERY] = query
+    user_id = user_data[con.LOGGED_USER_ID]
+    keyboard = [
+        [InlineKeyboardButton(f"{emoji.PERS_SURFING} Мои события", callback_data=f"{con.FIND_EVENTS}_{user_id}")],
+        [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.START_OVER)],
+    ]
     send_text_and_keyboard(
         update=query.message.edit_text,
         keyboard=keyboard,
@@ -262,11 +268,12 @@ def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
 
 
 def find_events_select_status(update: Update, context: CallbackContext) -> int:
+    user_data = context.user_data
+    logged_user_id = user_data[con.LOGGED_USER_ID]
     if update.message:
-        _cb = context.user_data[con.CALLBACK_QUERY]
+        _cb = user_data[con.CALLBACK_QUERY]
         update.message.delete()
         forward_from_user = update.message.forward_from
-        user_id = 0
         if forward_from_user:
             user_id = forward_from_user.id
         else:
@@ -294,12 +301,15 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
     if user_id != 0:
         session = Session()
         user = session.query(User).filter_by(unique_id=user_id).one_or_none()
+        status_numbers = update_numbers_who_goes(user_id=user_id)
     else:
         user = None
+        status_numbers = [0, 0]
     keyboard = [
-        [InlineKeyboardButton(f"Точно пойдет", callback_data=f"{con.EVENTS_USER}_{con.DEF_GO}{con.ADD_USER}_{user_id}")],
-        [InlineKeyboardButton(f"Возможно пойдет", callback_data=f"{con.EVENTS_USER}_{con.PROB_GO}{con.ADD_USER}_{user_id}")],
+        [InlineKeyboardButton(f"Точно {'пойду' if user_id == logged_user_id else 'пойдет'} ({status_numbers[0]})", callback_data=f"{con.EVENTS_USER}_{con.DEF_GO}{con.ADD_USER}_{user_id}")],
+        [InlineKeyboardButton(f"Возможно {'пойду' if user_id == logged_user_id else 'пойдет'} ({status_numbers[1]})", callback_data=f"{con.EVENTS_USER}_{con.PROB_GO}{con.ADD_USER}_{user_id}")],
         [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.MANAGE_USERS)],
+        [InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)]
     ]
     send_text_and_keyboard(
         update=_cb.message.edit_text,
@@ -435,11 +445,17 @@ def update_checkbox_party(context) -> int:
     return status
 
 
-def update_numbers_who_goes(event_id):
+def update_numbers_who_goes(event_id=None, user_id=None):
     numbers_list = [0, 0]
     session = Session()
-    party_data = session.query(Party).filter(
-        and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, or_(Party.status == 1, Party.status == 2))).all()
+    if user_id is None:
+        party_data = session.query(Party).filter(
+            and_(Party.event_id == event_id, Event.deleted == False,
+                 Event.id == event_id, or_(Party.status == 1, Party.status == 2))).all()
+    else:
+        party_data = session.query(Party).filter(
+            and_(Event.deleted == False, or_(Party.status == 1, Party.status == 2),
+                 Party.user_id == User.id, User.unique_id == user_id)).all()
     if party_data:
         for party in party_data:
             if party.status == 1:
