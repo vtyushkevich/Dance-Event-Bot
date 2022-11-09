@@ -457,7 +457,7 @@ def update_numbers_who_goes(event_id=None, user_id=None):
     else:
         party_data = session.query(Party).filter(
             and_(Event.deleted == False, or_(Party.status == 1, Party.status == 2),
-                 Party.user_id == User.id, User.unique_id == user_id)).all()
+                 Party.user_id == User.id, User.unique_id == user_id, Party.event_id == Event.id)).all()
     if party_data:
         for party in party_data:
             if party.status == 1:

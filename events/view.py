@@ -6,6 +6,7 @@ from telegram.ext import CallbackContext
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 import const as con
+import emoji
 from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict
 from events.validators import validate_user_data
 from main_models import Event, Session
@@ -30,11 +31,11 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     user_data = context.user_data
-    context.user_data[con.PROPERTY_TO_EDIT] = query.data
-    context.user_data[con.CALLBACK_QUERY] = query
+    user_data[con.PROPERTY_TO_EDIT] = query.data
+    user_data[con.CALLBACK_QUERY] = query
     send_text_and_keyboard(
         update=query.edit_message_text,
-        keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+        keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)]],
         message_text=con.TEXT_REQUEST[query.data],
     )
     return con.CREATE_PHOTO if query.data == con.EDIT_PHOTO else con.CREATE_PROPERTY
@@ -60,7 +61,7 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
         context.user_data[con.CALLBACK_QUERY] = None
         send_text_and_keyboard(
             update=update.message.reply_text,
-            keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+            keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)]],
             message_text=_validation_comment
         )
         return con.CREATE_PROPERTY
@@ -72,7 +73,7 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
     context.user_data[con.PROPERTY_TO_EDIT] = query.data
     calendar, step = DetailedTelegramCalendar(
         calendar_id=1,
-        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],
+        additional_buttons=[{"text": f"{emoji.LEFT_ARROW} Назад", 'callback_data': con.GO_BACK}],
         locale='ru',
     ).build()
     send_text_and_keyboard(
@@ -88,7 +89,7 @@ def set_date_value(update: Update, context: CallbackContext):
     query.answer()
     result, key, step = DetailedTelegramCalendar(
         calendar_id=1,
-        additional_buttons=[{"text": "\U00002B05 Назад", 'callback_data': con.GO_BACK}],
+        additional_buttons=[{"text": f"{emoji.LEFT_ARROW} Назад", 'callback_data': con.GO_BACK}],
         locale='ru',
     ).process(query.data)
     if not result and key:
@@ -124,7 +125,7 @@ def set_date_value(update: Update, context: CallbackContext):
             user_data[category + '_DT'] = None
             send_text_and_keyboard(
                 update=query.edit_message_text,
-                keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=category)]],
+                keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=category)]],
                 message_text=_validation_comment
             )
             return con.CREATE_DATE
@@ -174,7 +175,7 @@ def set_doc(update: Update, context: CallbackContext) -> int:
     context.user_data[con.CALLBACK_QUERY] = None
     send_text_and_keyboard(
         update=update.message.reply_text,
-        keyboard=[[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]],
+        keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)]],
         message_text=(_validation_comment if _validation_comment else _validation_mime_comment)
     )
     return con.CREATE_PHOTO
@@ -188,10 +189,10 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
     if _validation_passed:
         keyboard = [
             [InlineKeyboardButton("Опубликовать", callback_data=con.PUBLISH_EVENT)],
-            [InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)],
+            [InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)],
         ]
     else:
-        keyboard = [[InlineKeyboardButton("\U00002B05 Назад", callback_data=con.GO_BACK)]]
+        keyboard = [[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)]]
     _text = generate_text_event(user_data[con.EDIT_NAME], user_data[con.EDIT_CITY], user_data[con.EDIT_COUNTRY],
                                 user_data[con.EDIT_DATE_START], user_data[con.EDIT_DATE_END], user_data[con.EDIT_DESC])
     if user_data[con.EDIT_PHOTO]:
@@ -239,15 +240,16 @@ def publish_event(update: Update, context: CallbackContext) -> int:
             )
         _cb = con.SELECT_EVENT + '_' + str(event_id_int)
     session.commit()
-    send_text_and_keyboard(
-        update=query.message.edit_reply_markup,
-        keyboard='',
-        message_text=None
-    )
+    # send_text_and_keyboard(
+    #     update=query.message.edit_reply_markup,
+    #     keyboard='',
+    #     message_text=None
+    # )
+    query.message.delete()
     send_text_and_keyboard(
         update=query.message.reply_text,
         keyboard=[[InlineKeyboardButton("Ок", callback_data=_cb)]],
-        message_text="\U0001F4F0 Событие опубликовано!"
+        message_text=f"{emoji.RED_EXCLAMATION_SIGN} Событие опубликовано!"
     )
     user_data[con.DATE_COUNTER] = update_date_id_dict()
     if user_data[con.CURRENT_EVENT_ID] is None:
