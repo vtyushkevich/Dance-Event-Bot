@@ -1,4 +1,5 @@
 import logging
+
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -7,8 +8,10 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
+
+import const as con
 from almanac.view import show_event_calendar, delete_event_confirm, delete_event, \
-    show_events_of_month, show_selected_event, edit_event, browse_event_calendar, check_in_event, who_goes, \
+    show_events_of_month, show_selected_event, edit_event, browse_event_calendar, who_goes, \
     get_user_to_find_events, find_events_select_status, find_events
 from config import BOT_TOKEN
 from events.view import creating_event, get_date_to_edit, get_property_to_edit, show_edit_preview, publish_event, \
@@ -18,17 +21,17 @@ from main.view import (
     start_over,
     cancel, startup_deploy,
 )
-import const as con
 from users.view import manage_users, show_admins_list, delete_admin_confirm, delete_admin, add_admin_confirm, add_admin
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
     """Run the bot."""
+    logger.info("Run the bot",)
     updater = Updater(BOT_TOKEN)
     dispatcher = updater.dispatcher
 
@@ -130,7 +133,6 @@ def main() -> None:
     dispatcher.add_handler(conv_handler)
     startup_deploy()
 
-    # Start the Bot
     updater.start_polling()
     updater.idle()
 

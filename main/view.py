@@ -7,20 +7,21 @@ from telegram.ext import CallbackContext, ConversationHandler
 import const as con
 import emoji
 from config import BASIC_ADMIN_ID
-from core.view import send_text_and_keyboard, set_default_userdata, set_keyboard
+from core.view import send_text_and_keyboard, set_default_userdata, set_keyboard, get_query_and_data
 from main_models import Session, User, Base
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
+    filename="main_view_logger.log"
 )
 logger = logging.getLogger(__name__)
 
 
 def start(update: Update, context: CallbackContext) -> int:
     logger.info("User %s started the conversation.", update.message.from_user.first_name)
-    user_data = context.user_data
-    user_data[con.LOGGED_USER_ID] = update.message.from_user.id
+    query, user_data = get_query_and_data(update, context)
 
+    user_data[con.LOGGED_USER_ID] = update.message.from_user.id
     session = Session()
     user_info = session.query(User).filter_by(unique_id=update.message.from_user.id).one_or_none()
     if not user_info:
@@ -56,14 +57,20 @@ def start(update: Update, context: CallbackContext) -> int:
 
 
 def start_over(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
+    query, user_data = get_query_and_data(update, context)
+
+    session = Session()
+    message_text = ""
+    user_info = session.query(User).filter_by(unique_id=user_data[con.LOGGED_USER_ID]).one_or_none()
+    if user_info:
+        if user_info.access_level <= con.ADMIN_AL:
+            message_text = f"\nВы - администратор проекта {emoji.CROWN}"
     if query.message.caption:
         query.delete_message()
     send_text_and_keyboard(
         update=query.message.reply_text if query.message.caption else query.edit_message_text,
         keyboard=set_keyboard(context, con.START),
-        message_text=f"{emoji.GOLF} Что делаем дальше?",
+        message_text=f"{message_text}\n{emoji.GOLF} Что делаем дальше?",
     )
     set_default_userdata(context)
     return con.TOP_LEVEL
@@ -89,7 +96,7 @@ def startup_deploy():
             unique_id=BASIC_ADMIN_ID,
             first_name=None,
             second_name=None,
-            nickname='Базовый администратор бота',
+            nickname="Базовый администратор бота",
             access_level=con.SUPER_ADMIN_AL,
             deleted=False,
             created_at=datetime.today()

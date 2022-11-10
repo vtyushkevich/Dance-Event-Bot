@@ -7,16 +7,13 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 
 import const as con
 import emoji
-from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict
+from core.view import send_text_and_keyboard, set_keyboard, generate_text_event, update_date_id_dict, get_query_and_data
 from events.validators import validate_user_data
 from main_models import Event, Session
 
 
 def creating_event(update: Update, context: CallbackContext) -> int:
-    # logger.info('creating_event___' + str(update.callback_query.data))
-    update.callback_query.answer()
     message = update.callback_query.message
-    user_data = context.user_data
     if message.caption:
         message.delete()
     send_text_and_keyboard(
@@ -28,9 +25,8 @@ def creating_event(update: Update, context: CallbackContext) -> int:
 
 
 def get_property_to_edit(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     user_data[con.PROPERTY_TO_EDIT] = query.data
     user_data[con.CALLBACK_QUERY] = query
     send_text_and_keyboard(
@@ -68,9 +64,9 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
 
 
 def get_date_to_edit(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    context.user_data[con.PROPERTY_TO_EDIT] = query.data
+    query, user_data = get_query_and_data(update, context)
+
+    user_data[con.PROPERTY_TO_EDIT] = query.data
     calendar, step = DetailedTelegramCalendar(
         calendar_id=1,
         additional_buttons=[{"text": f"{emoji.LEFT_ARROW} Назад", 'callback_data': con.GO_BACK}],
@@ -85,8 +81,8 @@ def get_date_to_edit(update: Update, context: CallbackContext) -> int:
 
 
 def set_date_value(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
+    query, user_data = get_query_and_data(update, context)
+
     result, key, step = DetailedTelegramCalendar(
         calendar_id=1,
         additional_buttons=[{"text": f"{emoji.LEFT_ARROW} Назад", 'callback_data': con.GO_BACK}],
@@ -100,7 +96,6 @@ def set_date_value(update: Update, context: CallbackContext):
         )
         return con.CREATE_DATE
     elif result:
-        user_data = context.user_data
         category = user_data[con.PROPERTY_TO_EDIT]
         user_data[category + '_DT'] = result
         _validation_passed, _validation_comment = validate_user_data(category + '_DT', checked_date=result)
@@ -132,9 +127,10 @@ def set_date_value(update: Update, context: CallbackContext):
 
 
 def set_photo(update: Update, context: CallbackContext) -> int:
+    query, user_data = get_query_and_data(update, context)
+
     _cb = context.user_data[con.CALLBACK_QUERY]
     _cb.message.delete() if _cb is not None else None
-    user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     photo_file = update.message.photo[-1]
     user_data[category] = photo_file.file_id
@@ -148,9 +144,10 @@ def set_photo(update: Update, context: CallbackContext) -> int:
 
 
 def set_doc(update: Update, context: CallbackContext) -> int:
+    query, user_data = get_query_and_data(update, context)
+
     _cb = context.user_data[con.CALLBACK_QUERY]
     _cb.message.delete() if _cb is not None else None
-    user_data = context.user_data
     category = user_data[con.PROPERTY_TO_EDIT]
     doc_file = update.message.document
     _validation_passed, _validation_comment = None, None
@@ -182,9 +179,8 @@ def set_doc(update: Update, context: CallbackContext) -> int:
 
 
 def show_edit_preview(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     _validation_passed, _validation_comment = validate_user_data(con.PUBLISH_EVENT, userdata=context)
     if _validation_passed:
         keyboard = [
@@ -207,9 +203,8 @@ def show_edit_preview(update: Update, context: CallbackContext) -> int:
 
 
 def publish_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     session = Session()
     if user_data[con.CURRENT_EVENT_ID] is None:
         event = Event(
@@ -240,11 +235,6 @@ def publish_event(update: Update, context: CallbackContext) -> int:
             )
         _cb = con.SELECT_EVENT + '_' + str(event_id_int)
     session.commit()
-    # send_text_and_keyboard(
-    #     update=query.message.edit_reply_markup,
-    #     keyboard='',
-    #     message_text=None
-    # )
     query.message.delete()
     send_text_and_keyboard(
         update=query.message.reply_text,

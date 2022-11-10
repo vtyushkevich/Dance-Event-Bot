@@ -7,14 +7,14 @@ import const as con
 import emoji
 from config import BASIC_ADMIN_ID
 from core.view import send_text_and_keyboard, set_keyboard, update_admins_list, get_full_user_name, \
-    get_id_from_callback_data, get_username_from_text
+    get_id_from_callback_data, get_username_from_text, get_query_and_data
 from main_models import Session, User
 
 
 def manage_users(update: Update, context: CallbackContext) -> int:
-    update.callback_query.answer()
-    message = update.callback_query.message
+    query, user_data = get_query_and_data(update, context)
 
+    message = query.message
     send_text_and_keyboard(
         update=message.edit_text,
         keyboard=set_keyboard(context, con.MANAGE_USERS),
@@ -24,10 +24,9 @@ def manage_users(update: Update, context: CallbackContext) -> int:
 
 
 def show_admins_list(update: Update, context: CallbackContext) -> int:
-    update.callback_query.answer()
-    message = update.callback_query.message
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
+    message = query.message
     admins_list = update_admins_list()
     keyboard_list = []
     message_text = ""
@@ -52,8 +51,7 @@ def show_admins_list(update: Update, context: CallbackContext) -> int:
 
 
 def delete_admin_confirm(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
+    query, user_data = get_query_and_data(update, context)
 
     admin_id = get_id_from_callback_data(query.data)
     session = Session()
@@ -72,8 +70,7 @@ def delete_admin_confirm(update: Update, context: CallbackContext) -> int:
 
 
 def delete_admin(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
+    query, user_data = get_query_and_data(update, context)
 
     admin_id = get_id_from_callback_data(query.data)
     session = Session()
@@ -98,9 +95,9 @@ def delete_admin(update: Update, context: CallbackContext) -> int:
 
 
 def add_admin_confirm(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    context.user_data[con.CALLBACK_QUERY] = query
+    query, user_data = get_query_and_data(update, context)
+
+    user_data[con.CALLBACK_QUERY] = query
     keyboard = [[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.MANAGE_USERS)]]
     send_text_and_keyboard(
         update=query.message.edit_text,
@@ -112,7 +109,9 @@ def add_admin_confirm(update: Update, context: CallbackContext) -> int:
 
 
 def add_admin(update: Update, context: CallbackContext) -> int:
-    _cb = context.user_data[con.CALLBACK_QUERY]
+    query, user_data = get_query_and_data(update, context)
+
+    _cb = user_data[con.CALLBACK_QUERY]
     session = Session()
     keyboard = [[InlineKeyboardButton("Ок", callback_data=con.ADMINS_LIST)]]
 
@@ -120,7 +119,6 @@ def add_admin(update: Update, context: CallbackContext) -> int:
     forward_from_user = update.message.forward_from
     if forward_from_user:
         admin = session.query(User).filter_by(unique_id=forward_from_user.id).one_or_none()
-        session.commit()
         if admin is None:
             new_admin = User(
                 unique_id=forward_from_user.id,
@@ -147,7 +145,6 @@ def add_admin(update: Update, context: CallbackContext) -> int:
     else:
         username = get_username_from_text(update.message.text)
         admin = session.query(User).filter_by(nickname=username).one_or_none()
-        session.commit()
         if admin:
             admin.access_level = con.ADMIN_AL
             admin.deleted = False

@@ -2,22 +2,19 @@ import datetime
 import re
 
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import with_polymorphic
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
 import emoji
 from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
-    update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text
+    update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text, get_query_and_data
 from events.view import creating_event
 from main_models import Session, Event, Party, User
 
 
 def show_event_calendar(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     user_data[con.DATE_COUNTER] = update_date_id_dict()
     browse_event_calendar(update, context)
@@ -25,9 +22,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
 
 
 def browse_event_calendar(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     keyboard_list = []
     keyboard_nav = update_page_of_month_new(update, context)
@@ -50,9 +45,8 @@ def browse_event_calendar(update: Update, context: CallbackContext) -> int:
 
 
 def show_events_of_month(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     user_data[con.CURRENT_EVENT_ID] = None
     keyboard_list = []
     event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
@@ -96,9 +90,7 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 
 
 def show_selected_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
@@ -150,9 +142,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
 
 
 def delete_event_confirm(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     query.delete_message()
     event_id_int = user_data[con.CURRENT_EVENT_ID]
@@ -173,9 +163,7 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
 
 
 def delete_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
@@ -195,9 +183,7 @@ def delete_event(update: Update, context: CallbackContext) -> int:
 
 
 def edit_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
@@ -211,9 +197,8 @@ def edit_event(update: Update, context: CallbackContext) -> int:
 
 
 def who_goes(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     event_id = user_data[con.CURRENT_EVENT_ID]
     who_goes_str = ''
     from_find_cb = ''
@@ -247,9 +232,7 @@ def who_goes(update: Update, context: CallbackContext) -> int:
 
 
 def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     user_data[con.CALLBACK_QUERY] = query
     user_id = user_data[con.LOGGED_USER_ID]
@@ -268,7 +251,8 @@ def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
 
 
 def find_events_select_status(update: Update, context: CallbackContext) -> int:
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     logged_user_id = user_data[con.LOGGED_USER_ID]
     if update.message:
         _cb = user_data[con.CALLBACK_QUERY]
@@ -320,9 +304,7 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
 
 
 def find_events(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    context.user_data[con.CALLBACK_QUERY] = query
+    query, user_data = get_query_and_data(update, context)
 
     search = re.search(pattern=f"{con.EVENTS_USER}_\d+", string=query.data)
     status_int = 0
@@ -370,9 +352,7 @@ def find_events(update: Update, context: CallbackContext) -> int:
 
 
 def check_in_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id = user_data[con.CURRENT_EVENT_ID]
     user_id = user_data[con.LOGGED_USER_ID]
@@ -397,8 +377,8 @@ def check_in_event(update: Update, context: CallbackContext) -> int:
 
 
 def update_page_of_month_new(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     start = user_data[con.START_PAGE]
     stop = user_data[con.END_PAGE]
     button_back, button_forward = [], []

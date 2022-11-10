@@ -86,9 +86,9 @@ def generate_text_event(
     _text = f"{emoji.COUPLE} {event_name}\n\n"
     _text = _text + f"{emoji.PIN} {'' if event_city == '' else f'{event_city}, '}"
     _text = _text + f"{'' if event_country == '' else event_country}\n\n"
-    _text = _text + f"{emoji.ROCKET} {'Дата начала не указана ' if event_date_start == 'Дата начала' else event_date_start}\n\n"
+    _text = _text + f"{emoji.ROCKET} {'Дата начала не указана' if event_date_start == 'Дата начала' else event_date_start}\n\n"
     _text = _text + f"{emoji.RACING_FLAG} {'Дата окончания не указана' if event_date_end == 'Дата окончания' else event_date_end}\n\n"
-    _text = _text + ('' if event_desc == '' else 'О событии:\n' + event_desc)
+    _text = _text + ('' if event_desc == '' else f"О событии:\n{event_desc}")
     return _text
 
 
@@ -185,3 +185,12 @@ def user_access(context: CallbackContext) -> int:
         return user.access_level
     else:
         return con.USER_AL
+
+
+def get_query_and_data(update=None, context=None):
+    query, user_data = None, None
+    if update:
+        query = update.callback_query
+    if context:
+        user_data = context.user_data
+    return query, user_data
