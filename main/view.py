@@ -12,7 +12,7 @@ from main_models import Session, User, Base
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
-    filename="main_view_logger.log"
+    # filename="main_view_logger.log"
 )
 logger = logging.getLogger(__name__)
 

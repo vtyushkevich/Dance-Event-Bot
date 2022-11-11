@@ -38,9 +38,10 @@ def get_property_to_edit(update: Update, context: CallbackContext) -> int:
 
 
 def set_property_value(update: Update, context: CallbackContext) -> int:
-    _cb = context.user_data[con.CALLBACK_QUERY]
-    _cb.message.delete() if _cb is not None else None
     user_data = context.user_data
+
+    _cb = user_data[con.CALLBACK_QUERY]
+    _cb.message.delete() if _cb is not None else None
     input_from_user = update.message.text
     category = user_data[con.PROPERTY_TO_EDIT]
     _validation_passed, _validation_comment = validate_user_data(category, input_from_user)
@@ -54,7 +55,7 @@ def set_property_value(update: Update, context: CallbackContext) -> int:
         )
         return con.CREATE_EVENT
     else:
-        context.user_data[con.CALLBACK_QUERY] = None
+        user_data[con.CALLBACK_QUERY] = None
         send_text_and_keyboard(
             update=update.message.reply_text,
             keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=con.GO_BACK)]],
@@ -97,18 +98,18 @@ def set_date_value(update: Update, context: CallbackContext):
         return con.CREATE_DATE
     elif result:
         category = user_data[con.PROPERTY_TO_EDIT]
-        user_data[category + '_DT'] = result
-        _validation_passed, _validation_comment = validate_user_data(category + '_DT', checked_date=result)
+        user_data[f"{category}_DT"] = result
+        _validation_passed, _validation_comment = validate_user_data(f"{category}_DT", checked_date=result)
         if _validation_passed:
             _validation_passed, _validation_comment = validate_user_data(
-                category + '_DT',
+                f"{category}_DT",
                 checked_date=user_data[con.EDIT_DATE_START_DT],
                 checked_sec_date=user_data[con.EDIT_DATE_END_DT]
             )
         if _validation_passed:
             _datetype = {con.EDIT_DATE_START: 'Дата начала ', con.EDIT_DATE_END: 'Дата окончания '}
-            user_data[category] = _datetype[category] + ' ' + str(result.day) + ' ' + con.RU_MONTH.get(
-                result.month) + ' ' + str(result.year) + ' г.'
+            user_data[category] = f"{_datetype[category]} {result.day} {con.RU_MONTH.get(result.month)} " \
+                                  f"{result.year} г."
             del user_data[con.PROPERTY_TO_EDIT]
             send_text_and_keyboard(
                 update=query.edit_message_text,
@@ -117,7 +118,7 @@ def set_date_value(update: Update, context: CallbackContext):
             )
             return con.CREATE_EVENT
         else:
-            user_data[category + '_DT'] = None
+            user_data[f"{category}_DT"] = None
             send_text_and_keyboard(
                 update=query.edit_message_text,
                 keyboard=[[InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад", callback_data=category)]],
@@ -154,10 +155,10 @@ def set_doc(update: Update, context: CallbackContext) -> int:
     _validation_mime_passed, _validation_mime_comment = validate_user_data(category, mimetype=doc_file.mime_type)
     if _validation_mime_passed:
         photo_file = doc_file.get_file()
-        photo_file.download(custom_path='./_banners/' + photo_file.file_unique_id)
+        photo_file.download(custom_path=f"{con.PATH_TO_PICS}{photo_file.file_unique_id}")
         _validation_passed, _validation_comment = validate_user_data(category, userdata=photo_file.file_size)
         if _validation_passed:
-            user_data[category] = Path.cwd() / '_banners' / photo_file.file_unique_id
+            user_data[category] = Path.cwd() / con.PATH_TO_PICS / photo_file.file_unique_id
             del user_data[con.PROPERTY_TO_EDIT]
             _msg = update.message.reply_photo(
                 photo=open(user_data[category], 'rb'),
