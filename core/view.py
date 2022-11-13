@@ -173,9 +173,11 @@ def get_full_user_name(user_model) -> str:
     first_name = user_model.first_name or ""
     second_name = user_model.second_name or ""
     nickname = user_model.nickname or ""
+    if nickname:
+        nickname = f"@{nickname}"
     full_name = f"{first_name}".strip()
     full_name = f"{full_name} {second_name}".strip()
-    full_name = f"{full_name} @{nickname}".strip()
+    full_name = f"{full_name} {nickname}".strip()
     return full_name
 
 

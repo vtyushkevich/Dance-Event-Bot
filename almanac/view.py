@@ -124,7 +124,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
                                               callback_data=f"{con.SELECT_ALM}_{event_data.event_date_start.year * 100 + event_data.event_date_start.month}")])
     else:
         keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад к событиям пользователя",
-                                              callback_data=context.user_data[con.CALLBACK_QUERY].data)])
+                                              callback_data=user_data[con.CALLBACK_QUERY].data)])
     keyboard.append([InlineKeyboardButton(f"{emoji.GOLF} В основное меню",
                                           callback_data=con.START_OVER)])
     if event_data:
@@ -145,6 +145,7 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
             message_text=_text,
             photo=event_data.event_photo if event_data.event_photo != '' else None
         )
+    session.close()
     return con.CALENDAR
 
 
@@ -209,11 +210,10 @@ def who_goes(update: Update, context: CallbackContext) -> int:
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
     if from_find_events:
         from_find_cb = f"_{con.ADD_USER}"
-
+    session = Session()
     search = re.search(pattern=f"{con.WHO_GOES}_\d+", string=query.data)
     if search:
         status_int = int(re.search(pattern="\d+", string=search.group()).group())
-        session = Session()
         party_data = session.query(Party).join(User, User.id==Party.user_id).filter(
             and_(Party.event_id == event_id, Event.deleted == False,
                  Event.id == event_id, Party.status == status_int)
@@ -234,6 +234,7 @@ def who_goes(update: Update, context: CallbackContext) -> int:
         keyboard=keyboard,
         message_text=who_goes_str if who_goes_str != '' else "Отметок не поставлено"
     )
+    session.close()
     return con.CALENDAR
 
 
@@ -316,12 +317,14 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
         keyboard=keyboard,
         message_text=f"Поиск событий по участнику {get_full_user_name(user)}:\nвыберите отметку"
     )
+    session.close()
     return con.FIND_EVENTS
 
 
 def find_events(update: Update, context: CallbackContext) -> int:
     query, user_data = get_query_and_data(update, context)
 
+    user_data[con.CALLBACK_QUERY] = query
     search = re.search(pattern=f"{con.EVENTS_USER}_\d+", string=query.data)
     status_int = 0
     if search:
@@ -366,6 +369,7 @@ def find_events(update: Update, context: CallbackContext) -> int:
             keyboard=keyboard_nav,
             message_text=f"Отметок не найдено",
         )
+    session.close()
     return con.FIND_EVENTS
 
 
@@ -440,8 +444,9 @@ def update_checkbox_party(context) -> int:
     session = Session()
     party_data = session.query(Party).filter(
         and_(Party.event_id == event_id, Event.deleted == False,
-             Event.id == event_id, User.unique_id == user_id,
-             User.id == Party.user_id)).one_or_none()
+             User.unique_id == user_id,
+             User.id == Party.user_id
+             )).join(Event).one_or_none()
     if party_data and party_data.status != 0:
         status = party_data.status
     return status
@@ -453,11 +458,13 @@ def update_numbers_who_goes(event_id=None, user_id=None):
     if user_id is None:
         party_data = session.query(Party).filter(
             and_(Party.event_id == event_id, Event.deleted == False,
-                 Event.id == event_id, or_(Party.status == 1, Party.status == 2))).all()
+                 or_(Party.status == 1, Party.status == 2))).join(Event).all()
     else:
         party_data = session.query(Party).filter(
             and_(Event.deleted == False, or_(Party.status == 1, Party.status == 2),
-                 Party.user_id == User.id, User.unique_id == user_id, Party.event_id == Event.id)).all()
+                 Party.user_id == User.id, User.unique_id == user_id,
+                 # Party.event_id == Event.id
+                 )).join(Event).all()
     if party_data:
         for party in party_data:
             if party.status == 1:
