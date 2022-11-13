@@ -128,6 +128,7 @@ def add_admin(update: Update, context: CallbackContext) -> int:
                 created_at=datetime.today()
             )
             session.add(new_admin)
+            admin = session.query(User).filter_by(unique_id=forward_from_user.id).one_or_none()
         else:
             admin.first_name = forward_from_user.first_name
             admin.second_name = forward_from_user.last_name
