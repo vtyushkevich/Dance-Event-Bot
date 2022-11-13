@@ -2,22 +2,19 @@ import datetime
 import re
 
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import with_polymorphic
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 import const as con
 import emoji
 from core.view import send_text_and_keyboard, generate_text_event, set_default_userdata, \
-    update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text
+    update_date_id_dict, user_access, check_symbol, get_full_user_name, get_username_from_text, get_query_and_data
 from events.view import creating_event
 from main_models import Session, Event, Party, User
 
 
 def show_event_calendar(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     user_data[con.DATE_COUNTER] = update_date_id_dict()
     browse_event_calendar(update, context)
@@ -25,9 +22,7 @@ def show_event_calendar(update: Update, context: CallbackContext) -> int:
 
 
 def browse_event_calendar(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     keyboard_list = []
     keyboard_nav = update_page_of_month_new(update, context)
@@ -50,9 +45,8 @@ def browse_event_calendar(update: Update, context: CallbackContext) -> int:
 
 
 def show_events_of_month(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     user_data[con.CURRENT_EVENT_ID] = None
     keyboard_list = []
     event_date_int = int(re.search(pattern='\d{6}', string=query.data).group())
@@ -61,8 +55,6 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 
     session = Session()
     events_of_month = session.query(Event).filter(Event.id.in_(id_list)).order_by(Event.event_date_start)
-    session.commit()
-
     for event in events_of_month:
         _date_str_for_button = ''
         if event.event_date_start.month != event.event_date_end.month:
@@ -96,9 +88,7 @@ def show_events_of_month(update: Update, context: CallbackContext) -> int:
 
 
 def show_selected_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
@@ -109,25 +99,34 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
-    session.commit()
     check_in_event(update, context)
     status = update_checkbox_party(context)
     status_numbers = update_numbers_who_goes(event_id=event_id_int)
     keyboard = [
-        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})", callback_data=f"{con.WHO_GOES}_{con.DEF_GO}{from_find_cb}")],
-        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})", callback_data=f"{con.WHO_GOES}_{con.PROB_GO}{from_find_cb}")],
-        [InlineKeyboardButton(f"{check_symbol(status == con.DEF_GO)} Точно пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DEF_GO}{from_find_cb}")],
-        [InlineKeyboardButton(f"{check_symbol(status == con.PROB_GO)} Возможно пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.PROB_GO}{from_find_cb}")],
-        [InlineKeyboardButton(f"Не пойду", callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DONT_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"Кто пойдет ({status_numbers[0]})",
+                              callback_data=f"{con.WHO_GOES}_{con.DEF_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"Кто возможно пойдет ({status_numbers[1]})",
+                              callback_data=f"{con.WHO_GOES}_{con.PROB_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"{check_symbol(status == con.DEF_GO)} Точно пойду",
+                              callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DEF_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"{check_symbol(status == con.PROB_GO)} Возможно пойду",
+                              callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.PROB_GO}{from_find_cb}")],
+        [InlineKeyboardButton(f"Не пойду",
+                              callback_data=f"{con.SELECT_EVENT}_{event_id_int}{con.CHECK_IN}_{con.DONT_GO}{from_find_cb}")],
     ]
     if user_access(context) <= con.ADMIN_AL and from_find_events is None:
-        keyboard.append([InlineKeyboardButton(f"{emoji.EDIT_HAND} Редактировать событие", callback_data=f"{con.MANAGEMENT}_{event_id_int}")])
-        keyboard.append([InlineKeyboardButton(f"{emoji.TRASH_BIN} Удалить событие", callback_data=f"{con.DELETE_EVENT}_{event_id_int}")])
+        keyboard.append([InlineKeyboardButton(f"{emoji.EDIT_HAND} Редактировать событие",
+                                              callback_data=f"{con.MANAGEMENT}_{event_id_int}")])
+        keyboard.append([InlineKeyboardButton(f"{emoji.TRASH_BIN} Удалить событие",
+                                              callback_data=f"{con.DELETE_EVENT}_{event_id_int}")])
     if from_find_events is None:
-        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} К событиям месяца", callback_data=f"{con.SELECT_ALM}_{event_data.event_date_start.year * 100 + event_data.event_date_start.month}")])
+        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} К событиям месяца",
+                                              callback_data=f"{con.SELECT_ALM}_{event_data.event_date_start.year * 100 + event_data.event_date_start.month}")])
     else:
-        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад к событиям пользователя", callback_data=context.user_data[con.CALLBACK_QUERY].data)])
-    keyboard.append([InlineKeyboardButton(f"{emoji.GOLF} В основное меню", callback_data=con.START_OVER)])
+        keyboard.append([InlineKeyboardButton(f"{emoji.LEFT_ARROW} Назад к событиям пользователя",
+                                              callback_data=user_data[con.CALLBACK_QUERY].data)])
+    keyboard.append([InlineKeyboardButton(f"{emoji.GOLF} В основное меню",
+                                          callback_data=con.START_OVER)])
     if event_data:
         query.message.delete()
         _text = generate_text_event(
@@ -146,19 +145,17 @@ def show_selected_event(update: Update, context: CallbackContext) -> int:
             message_text=_text,
             photo=event_data.event_photo if event_data.event_photo != '' else None
         )
+    session.close()
     return con.CALENDAR
 
 
 def delete_event_confirm(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     query.delete_message()
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
-    session.commit()
     keyboard = [
         [InlineKeyboardButton("Удалить", callback_data=f"{con.DELETE_CONFIRMED}_{event_id_int}")],
         [InlineKeyboardButton("Назад", callback_data=f"{con.SELECT_EVENT}_{event_id_int}")],
@@ -173,14 +170,11 @@ def delete_event_confirm(update: Update, context: CallbackContext) -> int:
 
 
 def delete_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
-    session.commit()
     if event_data:
         event_data.deleted = True
         session.commit()
@@ -195,14 +189,11 @@ def delete_event(update: Update, context: CallbackContext) -> int:
 
 
 def edit_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id_int = user_data[con.CURRENT_EVENT_ID]
     session = Session()
     event_data = session.query(Event).filter_by(id=event_id_int).one_or_none()
-    session.commit()
     if event_data:
         set_default_userdata(context, event_data)
     creating_event(update, context)
@@ -211,25 +202,25 @@ def edit_event(update: Update, context: CallbackContext) -> int:
 
 
 def who_goes(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     event_id = user_data[con.CURRENT_EVENT_ID]
     who_goes_str = ''
     from_find_cb = ''
     from_find_events = re.search(pattern=con.ADD_USER, string=query.data)
     if from_find_events:
         from_find_cb = f"_{con.ADD_USER}"
-
+    session = Session()
     search = re.search(pattern=f"{con.WHO_GOES}_\d+", string=query.data)
     if search:
         status_int = int(re.search(pattern="\d+", string=search.group()).group())
-        session = Session()
         party_data = session.query(Party).join(User, User.id==Party.user_id).filter(
-            and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, Party.status == status_int)).order_by(User.nickname).all()
+            and_(Party.event_id == event_id, Event.deleted == False,
+                 Event.id == event_id, Party.status == status_int)
+        ).order_by(User.nickname).all()
         if party_data:
             for party in party_data:
-                who_goes_str = who_goes_str + get_full_user_name(party.user.first_name, party.user.second_name, party.user.nickname) + '\n'
+                who_goes_str = f"{who_goes_str}{get_full_user_name(party.user)}\n"
     if query.message.caption:
         query.delete_message()
         update = query.message.reply_text
@@ -243,13 +234,12 @@ def who_goes(update: Update, context: CallbackContext) -> int:
         keyboard=keyboard,
         message_text=who_goes_str if who_goes_str != '' else "Отметок не поставлено"
     )
+    session.close()
     return con.CALENDAR
 
 
 def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     user_data[con.CALLBACK_QUERY] = query
     user_id = user_data[con.LOGGED_USER_ID]
@@ -268,17 +258,28 @@ def get_user_to_find_events(update: Update, context: CallbackContext) -> int:
 
 
 def find_events_select_status(update: Update, context: CallbackContext) -> int:
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     logged_user_id = user_data[con.LOGGED_USER_ID]
+    session = Session()
     if update.message:
         _cb = user_data[con.CALLBACK_QUERY]
         update.message.delete()
         forward_from_user = update.message.forward_from
         if forward_from_user:
             user_id = forward_from_user.id
+            user = session.query(User).filter_by(unique_id=user_id).one_or_none()
+            if not user:
+                keyboard = [[InlineKeyboardButton("Ок", callback_data=con.MANAGE_USERS)]]
+                message_text = f"Пользователь с таким именем не найден в списке пользователей бота"
+                send_text_and_keyboard(
+                    update=_cb.message.edit_text,
+                    keyboard=keyboard,
+                    message_text=message_text
+                )
+                return con.FIND_EVENTS
         else:
             username = get_username_from_text(update.message.text)
-            session = Session()
             user = session.query(User).filter_by(nickname=username).one_or_none()
             if user:
                 user_id = user.unique_id
@@ -314,16 +315,16 @@ def find_events_select_status(update: Update, context: CallbackContext) -> int:
     send_text_and_keyboard(
         update=_cb.message.edit_text,
         keyboard=keyboard,
-        message_text=f"Поиск событий по участнику {get_full_user_name(user.first_name, user.second_name, user.nickname)}:\nвыберите отметку"
+        message_text=f"Поиск событий по участнику {get_full_user_name(user)}:\nвыберите отметку"
     )
+    session.close()
     return con.FIND_EVENTS
 
 
 def find_events(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    context.user_data[con.CALLBACK_QUERY] = query
+    query, user_data = get_query_and_data(update, context)
 
+    user_data[con.CALLBACK_QUERY] = query
     search = re.search(pattern=f"{con.EVENTS_USER}_\d+", string=query.data)
     status_int = 0
     if search:
@@ -349,7 +350,8 @@ def find_events(update: Update, context: CallbackContext) -> int:
     if event_data:
         keyboard_list = []
         for event in event_data:
-            _date_str_for_button = '{:02d}'.format(event.event_date_start.month) + '.' + '{:02d}'.format(event.event_date_start.year - 2000)
+            _date_str_for_button = '{:02d}'.format(event.event_date_start.month) \
+                                   + '.' + '{:02d}'.format(event.event_date_start.year - 2000)
             keyboard_list.append(
                 [InlineKeyboardButton(
                     f"{_date_str_for_button}, {event.event_name} {emoji.PIN}{event.event_city}, {event.event_country}",
@@ -358,7 +360,8 @@ def find_events(update: Update, context: CallbackContext) -> int:
         send_text_and_keyboard(
             update=update_func,
             keyboard=keyboard_list + keyboard_nav,
-            message_text=f"Cписок событий пользователя {get_full_user_name(user.first_name, user.second_name, user.nickname)} c отметкой {con.STATUS_TEXT[status_int]}",
+            message_text=f"Cписок событий пользователя {get_full_user_name(user)} "
+                         f"c отметкой {con.STATUS_TEXT[status_int]}",
         )
     else:
         send_text_and_keyboard(
@@ -366,13 +369,12 @@ def find_events(update: Update, context: CallbackContext) -> int:
             keyboard=keyboard_nav,
             message_text=f"Отметок не найдено",
         )
+    session.close()
     return con.FIND_EVENTS
 
 
 def check_in_event(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    query.answer()
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
 
     event_id = user_data[con.CURRENT_EVENT_ID]
     user_id = user_data[con.LOGGED_USER_ID]
@@ -381,7 +383,8 @@ def check_in_event(update: Update, context: CallbackContext) -> int:
         status_int = int(re.search(pattern="\d+", string=search.group()).group())
         session = Session()
         party_data = session.query(Party).filter(
-            and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, User.unique_id == user_id,
+            and_(Party.event_id == event_id, Event.deleted == False,
+                 Event.id == event_id, User.unique_id == user_id,
                  User.id == Party.user_id)).one_or_none()
         if party_data:
             party_data.status = status_int
@@ -397,8 +400,8 @@ def check_in_event(update: Update, context: CallbackContext) -> int:
 
 
 def update_page_of_month_new(update: Update, context: CallbackContext) -> int:
-    query = update.callback_query
-    user_data = context.user_data
+    query, user_data = get_query_and_data(update, context)
+
     start = user_data[con.START_PAGE]
     stop = user_data[con.END_PAGE]
     button_back, button_forward = [], []
@@ -440,8 +443,10 @@ def update_checkbox_party(context) -> int:
 
     session = Session()
     party_data = session.query(Party).filter(
-        and_(Party.event_id == event_id, Event.deleted == False, Event.id == event_id, User.unique_id == user_id,
-             User.id == Party.user_id)).one_or_none()
+        and_(Party.event_id == event_id, Event.deleted == False,
+             User.unique_id == user_id,
+             User.id == Party.user_id
+             )).join(Event).one_or_none()
     if party_data and party_data.status != 0:
         status = party_data.status
     return status
@@ -453,11 +458,13 @@ def update_numbers_who_goes(event_id=None, user_id=None):
     if user_id is None:
         party_data = session.query(Party).filter(
             and_(Party.event_id == event_id, Event.deleted == False,
-                 Event.id == event_id, or_(Party.status == 1, Party.status == 2))).all()
+                 or_(Party.status == 1, Party.status == 2))).join(Event).all()
     else:
         party_data = session.query(Party).filter(
             and_(Event.deleted == False, or_(Party.status == 1, Party.status == 2),
-                 Party.user_id == User.id, User.unique_id == user_id, Party.event_id == Event.id)).all()
+                 Party.user_id == User.id, User.unique_id == user_id,
+                 # Party.event_id == Event.id
+                 )).join(Event).all()
     if party_data:
         for party in party_data:
             if party.status == 1:

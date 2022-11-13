@@ -136,6 +136,7 @@ RU_MONTH_CAPITALIZED = {
 }
 
 NUM_EVENTS_ON_PAGE = 5
+PATH_TO_PICS = './_banners/'
 
 # Access levels
 (
@@ -162,4 +163,21 @@ NUM_EVENTS_ON_PAGE = 5
 STATUS_TEXT = {
     1: "*Точно пойдет*",
     2: "*Возможно пойдет*",
+}
+
+DEFAULT_VALUES = {
+    EDIT_NAME: "",
+    EDIT_CITY: "",
+    EDIT_COUNTRY: "",
+    EDIT_DESC: "",
+    EDIT_DATE_START: "Дата начала",
+    EDIT_DATE_END: "Дата окончания",
+    EDIT_DATE_START_DT: None,
+    EDIT_DATE_END_DT: None,
+    EDIT_PHOTO: "",
+    PROPERTY_TO_EDIT: None,
+    CALLBACK_QUERY: None,
+    CURRENT_EVENT_ID: None,
+    START_PAGE: 0,
+    END_PAGE: NUM_EVENTS_ON_PAGE,
 }
