@@ -60,7 +60,8 @@ def start(update: Update, context: CallbackContext) -> int:
         send_text_and_keyboard(
             update=update.message.reply_text,
             keyboard=[],
-            message_text=f"Ошибка"
+            message_text=f"Ошибка\n"
+                         f"{e.__class__.__name__}: {e}"
         )
         session.rollback()
     return con.TOP_LEVEL
