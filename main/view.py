@@ -128,8 +128,8 @@ def startup_deploy():
         else:
             user_info.deleted = False
             user_info.access_level = con.SUPER_ADMIN_AL
+        session.commit()
         session.close()
     except Exception as e:
         logger.error(f"{e.__class__.__name__}: {e}")
         session.rollback()
-    session.commit()
